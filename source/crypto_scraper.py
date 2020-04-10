@@ -14,41 +14,73 @@ def dates_converter(day1='20141122'):               #20141122 is the first date 
     """
     dates = []
     date_format = datetime.strptime(day1, '%Y%m%d')
-    last_date = int(datetime.today().strftime('%Y%m%d'))
+    max_date = int(datetime.today().strftime('%Y%m%d'))
 
     for day in range(2500):
         next_day = str(date_format + timedelta(days=day))
-        iterator = next_day.replace('-', '').split()[0]
+        next_day_format = next_day.replace('-', '').split()[0]
 
-        if int(iterator) <= last_date:
-            dates.append(iterator)
+        if int(next_day_format) <= max_date:
+            dates.append(next_day_format)
 
     return dates
 
 
 
 def csv_creator(df, crypto, name):
-    return df.to_csv(f'../data/{crypto}_{name}.csv', index=True)
+    return df.to_csv(f'../data/{crypto}_{name}.csv', index=True, compression='gzip')
 
 
 
-def data_obtainer(interval, name, crypto):
-    xbt_btc = pd.DataFrame()
+def data_obtainer(interval, crypto, name):
+    """Iterates through the dates list collecting the data for the specified cryptocurrency. Since we are
+    working with a huge amount of data we need to limit the number of dates to collect. Otherwise the computer
+    might run out of memory not allowing the code to finish. Hence, we will create different csv to process and
+    concatenate at a later stage.
+
+    Arguments:
+        interval {[list]} -- interval of dates we are going to collect.
+        name {[str]} -- how we want to name our csv file.
+        crypto {[str]} -- crypto data we are willing to collect.
+
+    Returns:
+        [csv] -- gzip file with the data for the desired cryptocurrency.
+    """
+    crypto_data = pd.DataFrame()
     num_of_dates = 500
     no_data_found = []
-    for i, date in enumerate(interval):  # limit the amount of iterations. Otherwise, the computer's memory reach a point where it stops working. Remember to modify the value to iterate until the last value.
-        if i % 10 == 0:
-            print(f'Progress: {i / num_of_dates * 100:.2f}%')
 
-        url = f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz'      #Data updated everyday at 05:40am
+    for num, date in enumerate(interval):  # Limit the amount of iterations. The computer's memory might not hold all the data.
+        if num % 10 == 0:
+            print(f'Progress: {num / num_of_dates * 100:.2f}%')
 
+
+        url = f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz'   #Data updated everyday at 05:40am
         try:
             data = pd.read_csv(url)
-            data_xbt = data[data['symbol'] == crypto]
-            xbt_btc = pd.concat([xbt_btc, data_xbt])
+            data_symb = data[data['symbol'] == crypto]
+            crypto_data = pd.concat([crypto_data, data_symb])
+
         except:
             no_data_found.append(date)
-            print(f'No data available in {date}.csv')
+            print(f'No data available for {date}.csv')
 
-    print(f'Check data from:{no_data_found}')
-    return csv_creator(xbt_btc, name)
+    print(f'Check data for dates: [{no_data_found}]')
+    return csv_creator(crypto_data, name, crypto)
+
+
+def main(crypto):
+    print('Preparing your data...')
+    dates = dates_converter()
+    print('Charging first csv...')
+    data1 = pd.DataFrame(data_obtainer(dates[:500], crypto, 'data1'))
+    print('Charging second csv...')
+    data2 = pd.DataFrame(data_obtainer(dates[500:1000], crypto, 'data2'))
+    print('Charging third csv...')
+    data3 = pd.DataFrame(data_obtainer(dates[1000:1500], crypto, 'data3'))
+    print('Charging fourth csv...')
+    data4 = pd.DataFrame(data_obtainer(dates[1500:], crypto, 'data4'))
+
+if __name__ == "__main__":                #Feel free to replace 'XBTUSD' by the desired crypto
+    main(crypto='XBTUSD')
+
