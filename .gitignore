@@ -131,5 +131,6 @@ dmypy.json
 
 .csv
 *.csv
- .DS_Store
- .idea
+.DS_Store/
+.idea/
+*.iml
