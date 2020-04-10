@@ -1,5 +1,5 @@
 # Crypto Scraper
- Python script to automatically extract data coming from the orderbook for a desired cryptocurrency.
+ **Python script to automatically extract data coming from the orderbook for a desired cryptocurrency.**
  
 ### Output data
 
