@@ -41,7 +41,7 @@ In case the script is not working on your machine, I would reduce the dates inte
  
 ### Files
 
-**data:** Folder where the collected data will be stored.
+**data:** You should create a folder named "data" where the collected data will be stored. The path should be in the previous location from the script.
 
 **Source:** Folder containing the script. When executing, we will only need to specify the cryptocurrency we are interested in. By default it is Bitcoin. The date can also be modified. 
 
