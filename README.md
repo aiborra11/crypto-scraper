@@ -43,6 +43,10 @@ In case the script is not working on your machine, I would reduce the dates inte
 
 **data:** You should create a folder named "data" where the collected data will be stored. The path should be in the previous location from the script.
 
-**Source:** Folder containing the script. When executing, we will only need to specify the cryptocurrency we are interested in. By default it is Bitcoin. The date can also be modified. 
+**Source:** Folder containing the scripts. 
+
+**Main:** Executable script to collect all the data. When executing, we will only need to specify the cryptocurrency we are interested in (by default it is Bitcoin) and the date (by default is the first available day providing data). 
+
+**Updmain:** Executable script to update data from a specific date. When executing, we will only need to specify the cryptocurrency we are interested in (by default it is Bitcoin) and the date (by default is the first available day providing data). 
 
 ********

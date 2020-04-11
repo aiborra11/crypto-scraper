@@ -66,6 +66,7 @@ def data_obtainer(interval, crypto, name):
             print(f'No data available for {date}.gz')
 
     print(f'Check data for dates: [{no_data_found}]')
+
     return csv_creator(crypto_data, name, crypto)
 
 

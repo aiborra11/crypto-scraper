@@ -33,7 +33,7 @@ def main(crypto, day1):
 if __name__ == "__main__":
     """
     
-    FEEL FREE TO MODIFY THIS STRINGS TO COLLECT THE DESIRED DATA
+    FEEL FREE TO MODIFY THESE STRINGS TO COLLECT THE DESIRED DATA
     
     """
     main(crypto='XBTUSD', day1='20141122')

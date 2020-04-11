@@ -24,7 +24,7 @@ def main(crypto, day_update):
 if __name__ == "__main__":
     """
     
-    FEEL FREE TO MODIFY THIS STRINGS TO COLLECT THE DESIRED DATA
+    FEEL FREE TO MODIFY THESE STRINGS TO COLLECT THE DESIRED DATA
     
     """
 
