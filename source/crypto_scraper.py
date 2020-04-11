@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
+import time
 
 
 def dates_converter(day1='20141122'):               #20141122 is the first date provided in the website
@@ -28,7 +29,7 @@ def dates_converter(day1='20141122'):               #20141122 is the first date 
 
 
 def csv_creator(df, crypto, name):
-    return df.to_csv(f'../data/{crypto}_{name}.csv', index=True, compression='gzip')
+    return df.to_csv(f'../data/{crypto}_{name}.gz', index=True, compression='gzip')
 
 
 
@@ -54,7 +55,6 @@ def data_obtainer(interval, crypto, name):
         if num % 10 == 0:
             print(f'Progress: {num / num_of_dates * 100:.2f}%')
 
-
         url = f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz'   #Data updated everyday at 05:40am
         try:
             data = pd.read_csv(url)
@@ -63,7 +63,7 @@ def data_obtainer(interval, crypto, name):
 
         except:
             no_data_found.append(date)
-            print(f'No data available for {date}.csv')
+            print(f'No data available for {date}.gz')
 
     print(f'Check data for dates: [{no_data_found}]')
     return csv_creator(crypto_data, name, crypto)
@@ -71,15 +71,18 @@ def data_obtainer(interval, crypto, name):
 
 def main(crypto):
     print('Preparing your data...')
-    dates = dates_converter()
+    dates = dates_converter(day1='20141122')
     print('Charging first csv...')
-    data1 = pd.DataFrame(data_obtainer(dates[:500], crypto, 'data1'))
+    data1 = pd.DataFrame(data_obtainer(dates[:500], crypto, 'data1gzip'))
+    time.sleep(15)
     print('Charging second csv...')
-    data2 = pd.DataFrame(data_obtainer(dates[500:1000], crypto, 'data2'))
+    data2 = pd.DataFrame(data_obtainer(dates[500:1000], crypto, 'data2gzip'))
     print('Charging third csv...')
-    data3 = pd.DataFrame(data_obtainer(dates[1000:1500], crypto, 'data3'))
+    time.sleep(15)
+    data3 = pd.DataFrame(data_obtainer(dates[1000:1500], crypto, 'data3gzip'))
     print('Charging fourth csv...')
-    data4 = pd.DataFrame(data_obtainer(dates[1500:], crypto, 'data4'))
+    time.sleep(15)
+    data4 = pd.DataFrame(data_obtainer(dates[1500:], crypto, 'data4gzip'))
 
 if __name__ == "__main__":                #Feel free to replace 'XBTUSD' by the desired crypto
     main(crypto='XBTUSD')
