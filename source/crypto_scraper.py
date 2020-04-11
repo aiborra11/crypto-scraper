@@ -29,7 +29,7 @@ def dates_converter(day1='20141122'):               #20141122 is the first date 
 
 
 def csv_creator(df, crypto, name):
-    return df.to_csv(f'../data/{crypto}_{name}.gz', index=True, compression='gzip')
+    return df.to_csv(f'./data/{crypto}_{name}.gz', index=True, compression='gzip')
 
 
 
