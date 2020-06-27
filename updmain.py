@@ -16,7 +16,7 @@ def main(crypto, day_update):
     print('Preparing your data...')
     dates = dates_converter(day_update)
     print('Charging data to update...')
-    data1 = pd.DataFrame(data_obtainer(dates, crypto, 'data_updategzip'))
+    data1 = pd.DataFrame(data_obtainer(dates, crypto))
 
 
 

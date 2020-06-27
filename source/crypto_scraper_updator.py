@@ -1,9 +1,10 @@
 import pandas as pd
+from source.database import Database
 
 from source.crypto_scraper import csv_creator
 
 
-def data_obtainer(interval, crypto, name):
+def data_obtainer(interval, crypto):
     """Iterates through the dates list collecting the data for the specified cryptocurrency.
     The dates list contains the dates from which we are interested in collecting data.
 
@@ -20,5 +21,8 @@ def data_obtainer(interval, crypto, name):
         dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
         data_symb = dataset[dataset['symbol'] == crypto]
 
-        return csv_creator(data_symb, crypto, name)
+        database = Database().initialize('btc_data')
+        # interval =
+
+        return Database().insert(interval, data_symb)
 
