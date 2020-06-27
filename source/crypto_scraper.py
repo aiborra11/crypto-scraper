@@ -1,6 +1,8 @@
 import pandas as pd
 from datetime import datetime, timedelta
 
+from pymongo import MongoClient
+
 
 
 def dates_converter(day1='20141122'):               #20141122 is the first date provided in the website
@@ -30,6 +32,7 @@ def dates_converter(day1='20141122'):               #20141122 is the first date 
 
 def csv_creator(df, crypto, name):
     return df.to_csv(f'./data/{crypto}_{name}.gz', index=True, compression='gzip')
+
 
 
 
