@@ -26,6 +26,7 @@ def dates_converter(day1='20141122'):               #20141122 is the first date 
         if int(next_day_format) <= max_date:
             dates.append(next_day_format)
 
+    # print('Dates to be scrapped:', dates)
     return dates
 
 

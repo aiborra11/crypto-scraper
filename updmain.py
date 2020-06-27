@@ -16,7 +16,7 @@ def main(crypto, day_update):
     print('Preparing your data...')
     dates = dates_converter(day_update)
     print('Charging data to update...')
-    data1 = pd.DataFrame(data_obtainer(dates, crypto))
+    data1 = data_obtainer(dates, crypto)
 
 
 
@@ -28,4 +28,4 @@ if __name__ == "__main__":
     
     """
 
-    main(crypto='XBTUSD', day_update='20200410')
+    main(crypto='XBTUSD', day_update='20200623')

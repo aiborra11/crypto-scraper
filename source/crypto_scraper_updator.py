@@ -1,7 +1,6 @@
 import pandas as pd
-from source.database import Database
 
-from source.crypto_scraper import csv_creator
+from .database import Database
 
 
 def data_obtainer(interval, crypto):
@@ -16,13 +15,14 @@ def data_obtainer(interval, crypto):
     Returns:
         [csv] -- gzip file with the data for the desired cryptocurrency.
     """
-    for date in interval:
+
+    database = Database().initialize('btc_data')
+
+    print('Interval to be scrapped:', interval)
+    for date in interval[:-1]:
         print(date)
         dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
         data_symb = dataset[dataset['symbol'] == crypto]
 
-        database = Database().initialize('btc_data')
-        # interval =
-
-        return Database().insert(interval, data_symb)
+        Database().insert(str(date), data_symb)
 
