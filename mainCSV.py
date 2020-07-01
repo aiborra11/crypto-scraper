@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 
-from source.crypto_scraper import datesConverter, dataObtainer
+from source.crypto_scraper_csv import dates_converter, data_obtainer
 
 
 def main(crypto, day1):
@@ -15,18 +15,18 @@ def main(crypto, day1):
         [gzip] -- gzip file containing the data for the desired crypto and the desired dates.
     """
     print('Preparing your data...')
-    dates = datesConverter(day1)
+    dates = dates_converter(day1)
     print('Charging first csv...')
-    data1 = pd.DataFrame(dataObtainer(dates[:500], crypto, 'data1gzip'))
+    pd.DataFrame(data_obtainer(dates[:500], crypto, 'data1gzip'))
     time.sleep(15)
     print('Charging second csv...')
-    data2 = pd.DataFrame(dataObtainer(dates[500:1000], crypto, 'data2gzip'))
+    pd.DataFrame(data_obtainer(dates[500:1000], crypto, 'data2gzip'))
     print('Charging third csv...')
     time.sleep(15)
-    data3 = pd.DataFrame(dataObtainer(dates[1000:1500], crypto, 'data3gzip'))
+    pd.DataFrame(data_obtainer(dates[1000:1500], crypto, 'data3gzip'))
     print('Charging fourth csv...')
     time.sleep(15)
-    data4 = pd.DataFrame(dataObtainer(dates[1500:], crypto, 'data4gzip'))
+    pd.DataFrame(data_obtainer(dates[1500:], crypto, 'data4gzip'))
 
 
 
@@ -37,4 +37,8 @@ if __name__ == "__main__":
     FEEL FREE TO MODIFY THESE STRINGS TO COLLECT THE DESIRED DATA
     
     """
+    # rawData = Database().initialize('btc_data')
+    # print(rawData[-5])
+
+
     main(crypto='XBTUSD', day1='20141122')
