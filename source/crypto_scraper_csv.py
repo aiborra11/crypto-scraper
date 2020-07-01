@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 
-def datesConverter(day1='20141122'):               # 20141122 is the first available date provided in the website
+def dates_converter(day1='20141122'):               # 20141122 is the first available date provided in the website
     """Taking the first available date (if anything else is specified when calling the function) and converts it
     into dateformat to add one day and iterate every csv file in the website.
 
@@ -26,11 +26,11 @@ def datesConverter(day1='20141122'):               # 20141122 is the first avail
     return dates
 
 
-def csvCreator(df, crypto, name):
+def csv_creator(df, crypto, name):
     return df.to_csv(f'./data/{crypto}_{name}.gz', index=True, compression='gzip')
 
 
-def dataObtainer(interval, crypto, name):
+def data_obtainer(interval, crypto, name):
     """Iterates through the dates list collecting the data for the specified cryptocurrency. Since we are
     working with a huge amount of data we need to limit the number of dates to collect. Otherwise the computer
     might run out of memory not allowing the code to finish. Hence, we will create different csv to process and
@@ -64,6 +64,6 @@ def dataObtainer(interval, crypto, name):
 
     print(f'Check data for dates: [{no_data_found}]')
 
-    return csvCreator(crypto_data, name, crypto)
+    return csv_creator(crypto_data, name, crypto)
 
 

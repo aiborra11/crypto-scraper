@@ -1,5 +1,8 @@
-from source.crypto_scraper_updator import dataUpdator
-from source.crypto_scraper import datesConverter
+from source.crypto_scraper_db import data_updator
+from source.crypto_scraper_csv import dates_converter
+
+from source.database import Database
+
 
 
 
@@ -14,9 +17,9 @@ def main(crypto, day_update):
         [gzip] -- gzip file containing the data for the desired crypto and the desired dates.
     """
     print('Preparing your data...')
-    dates = datesConverter(day_update)
+    dates = dates_converter(day_update)
     print('Charging data to update...')
-    dataUpdator(dates, crypto)
+    data_updator(dates, crypto)
 
 
 
@@ -28,4 +31,10 @@ if __name__ == "__main__":
     
     """
 
-    main(crypto='XBTUSD', day_update='20200625')
+    # raw_data = Database().initialize('btc_data')[-5]
+    raw_data = Database().initialize('xbt')
+    print('Updating from: ', raw_data[-1])
+
+
+    main(crypto='XBTUSD', day_update=raw_data[-1])
+
