@@ -16,8 +16,11 @@ def main(crypto, day_update):
     Returns:
         [gzip] -- gzip file containing the data for the desired crypto and the desired dates.
     """
+
+
     print('Preparing your data...')
     dates = dates_converter(day_update)
+
     print('Charging data to update...')
     data_updator(dates, crypto)
 
@@ -31,10 +34,27 @@ if __name__ == "__main__":
     
     """
 
-    # raw_data = Database().initialize('btc_data')[-5]
-    raw_data = Database().initialize('xbt')
-    print('Updating from: ', raw_data[-1])
+    while True:
+        print('Enter 1 if you want to update your database:')
+        print('Enter 2 if you want to collect raw data:')
+        print('Enter 3 if you want to delete a collection')
+        print('Enter 4 to exit')
 
+        userChoice = int(input())
+        database = Database()
 
-    main(crypto='XBTUSD', day_update=raw_data[-1])
+        if userChoice is 1:
+            update_from = database.showAvailableData()[-1]
+            main(crypto='XBTUSD', day_update=update_from)
 
+        elif userChoice is 2:
+            rawData = database.getRawData()
+            print(rawData.head())
+
+        elif userChoice is 3:
+            deletedColl = database.removeCollection()
+            print(f'The collection has been removed successfully from the database.')
+
+        elif userChoice is 4:
+            print('Goodbye!')
+            quit()

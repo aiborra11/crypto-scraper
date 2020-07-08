@@ -7,30 +7,55 @@ class Database(object):
     DATABASE = None
 
     def __init__(self):
-        # Starting the client
-        self.client = MongoClient('localhost', 27017)
-        # print(f'These are your available databases: {self.client.list_database_names()}')
+        self.__client = MongoClient('localhost', 27017)
+        self.databaseName = str(self.selectDatabase())
 
-    def initialize(self, databaseName):
-        # Accessing to the desired collection
-        Database.DATABASE = self.client[databaseName]
-        print(f'These are your available collections inside {databaseName}: {Database.DATABASE.list_collection_names()}')
-        return sorted(Database.DATABASE.list_collection_names())
+    def selectDatabase(self):
+        print(f'Available databases: {sorted(self.__client.list_database_names())}. Choose the one you are interested in:')
+        self.databaseName = input()
+        return self.databaseName
+
+    def getRawData(self, query={}):
+        Database.DATABASE = self.__client[self.databaseName]
+        print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}. Select the ones you are interested in, or write "all" if you want them all')
+        collections = input()
+        return pd.DataFrame(Database.DATABASE[collections].find(query))
+
+    def removeCollection(self):
+        Database.DATABASE = self.__client[self.databaseName]
+        print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}. Select the ones you are willing to drop:')
+        collections = input()
+        return Database.DATABASE[collections].drop()
+
+
+    def showAvailableData(self):
+        Database.DATABASE = self.__client[self.databaseName]
+        available_data = sorted(Database.DATABASE.list_collection_names())
+        print('available data', available_data)
+        print(f'If you would like to update since last record, write "last". Else, write the date in this format: YYYYMMDD')
+        interval = str(input())
+        if interval == 'last':
+            print('You have chosen last, so we will update since:', available_data[-1])
+            return [available_data][-1]
+
+        elif interval in available_data:
+            print(f'The interval: {interval} is available')
+            return [interval]
+
+        else:
+            print('There is no data for this date')
+
 
     @staticmethod
-    def insert(collection, data):
-        # Insert new data into the desired collection
-        data = data.to_dict(orient='records')
-        Database.DATABASE[collection].insert_many(data)
-        print(f'Your new collection {collection} has been created successfully')
+    def updateDatabase(date, available_data):
+        available_data = available_data.to_dict(orient='records')
+        Database.DATABASE[date].insert_many(available_data)
+        print(f'Your new collection {date}, has been created successfully')
 
-    @staticmethod
-    def removeCollection(collection):
-        # Remove collection
-        Database.DATABASE[collection].drop()
-        print(f'Your collection {collection} has been removed')
 
-    @staticmethod
-    def find(collection, query={}):
-        # Bring up the data from the database
-        return pd.DataFrame(Database.DATABASE[collection].find(query))
+
+class DatabaseUpdator(Database):
+    def __init__(self):
+        pass
+
+
