@@ -41,12 +41,12 @@ In case the script is not working on your machine, I would reduce the dates inte
  
 ### Files
 
-**data:** You should create a folder named "data" where the collected data will be stored. The path should be in the previous location from the script.
+**data:** You should create a folder named "data" where the collected data will be stored (only if we execute the mainCSV.py). The path should be in the previous location from the script.
 
-**source:** Folder containing the scripts. 
+**source:** Folder containing the magic. 
 
-**mainCSV:** Executable script to collect all the data from the orderbook starting at a specific date. We will carry on with some feature engineering and store it into a csv compressed as gzip file. When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default is the first available day providing data.). 
+**mainCSV:** Executable script to collect all the data from the orderbook starting at a specific date. We will carry on with some feature engineering and store it into a csv compressed as gzip file. When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default is the first available.). 
 
-**mainDB:** Executable script to collect all raw data from the orderbook starting at a specific date and automatically stored in a mongoDB (in my case I named it "xbt". When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default will be the date of the last time we executed this script.). 
+**mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically stored in a mongoDB (in my case I named it "xbt". When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default will be the date of the last time we executed this script.). 
 
 ********

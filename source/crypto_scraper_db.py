@@ -1,7 +1,13 @@
 import pandas as pd
+from datetime import datetime
 
-from .database import Database
+from .database import DatabaseUpdator
 
+
+def datetimeConverter(df):
+    df['timestamp'] = df.timestamp.map(lambda t: datetime.strptime(t[:-3], '%Y-%m-%dD%H:%M:%S.%f'))
+    # data_indexing = df.set_index('timestamp')
+    return df
 
 def data_updator(interval, crypto):
     """Iterates through the dates list collecting the data for the specified cryptocurrency.
@@ -15,12 +21,14 @@ def data_updator(interval, crypto):
         [dataset] -- dataset stored in mongo for a specific date
     """
 
-    Database().initialize('xbt')
 
-    print('Interval to be scrapped:', interval)
+    print('Interval to be scrapped:', interval[:-1])
     for date in interval[:-1]:
         print(f'{date} is being processed...')
+
         dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
         crypto_data = dataset[dataset['symbol'] == crypto]
-        Database().insert(str(date), crypto_data)
+        crypto_data_indexed = datetimeConverter(crypto_data)
+
+        DatabaseUpdator.updateDatabase(str(date), crypto_data_indexed)
 
