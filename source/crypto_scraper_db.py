@@ -6,7 +6,6 @@ from .database import DatabaseUpdator
 
 def datetimeConverter(df):
     df['timestamp'] = df.timestamp.map(lambda t: datetime.strptime(t[:-3], '%Y-%m-%dD%H:%M:%S.%f'))
-    # data_indexing = df.set_index('timestamp')
     return df
 
 def data_updator(interval, crypto):
