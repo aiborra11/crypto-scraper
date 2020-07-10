@@ -13,14 +13,18 @@ class Database(object):
     def selectDatabase(self):
         print(f'Available databases: {sorted(self.client.list_database_names())}.')
         print('Please, write the one you are interested in:')
-        self.databaseName = input()
-        return self.databaseName
+        self.databaseName = str(input())
+        if self.databaseName in self.client.list_database_names():
+            return self.databaseName
+        else:
+            print(f'Sorry, we do not have a database named: {self.databaseName}. Restart the DB and try again.', )
+            quit()
 
     def getRawData(self, query={}):
         Database.DATABASE = self.client[self.databaseName]
         print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Select the ones you are interested in, or write "all" if you want them all')
-        collections = str(input())
+        collections = str(input().lower())
 
         if collections == 'all':
             print('We are preparing all available collections: ', collections)
@@ -41,7 +45,7 @@ class Database(object):
 
         else:
             print('We are preparing your collection for: ', collections)
-            return pd.DataFrame(Database.DATABASE[collections].find(query))
+            return pd.DataFrame(Database.DATABASE[collections].find(query)).set_index('timestamp')
 
     def removeCollection(self):
         Database.DATABASE = self.client[self.databaseName]
@@ -55,7 +59,8 @@ class Database(object):
         Database.DATABASE = self.client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
-        print(f"If you'd like to update since last record, write 'last'. Else, write the date in this format: YYYYMMDD")
+        print("If you'd like to update since the last available record, write 'last'.")
+        print('To update from a specific period, write the date in this format: YYYYMMDD')
         interval = str(input())
         if interval == 'last':
             print('You have chosen last, so we will update since:', available_data[-1])
