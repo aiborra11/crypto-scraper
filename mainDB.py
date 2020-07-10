@@ -2,6 +2,7 @@ from source.crypto_scraper_db import data_updator
 from source.crypto_scraper_csv import dates_converter
 
 from source.database import Database
+from source.dataframe_creator import processData
 
 
 
@@ -36,9 +37,10 @@ if __name__ == "__main__":
 
     while True:
         print('Enter 1 if you want to update your database:')
-        print('Enter 2 if you want to collect raw data:')
-        print('Enter 3 if you want to delete a collection:')
-        print('Enter 4 to exit:')
+        print('Enter 2 if you want to collect RAW data:')
+        print('Enter 3 if you want to collect PROCESSED data:')
+        print('Enter 4 if you want to delete a collection:')
+        print('Enter 5 to exit:')
 
         userChoice = int(input())
 
@@ -56,10 +58,23 @@ if __name__ == "__main__":
 
         elif userChoice is 3:
             database = Database()
+            rawData = database.getRawData()
+            print(f'Your Raw Data has {len(rawData)} rows.')
+            print(rawData.head())
+            print(rawData.tail())
+
+            processedData = processData(rawData)
+            dataFrame = processedData.createDataFrame()
+            print(dataFrame.head())
+            print(dataFrame.tail())
+            print(f'Your Processed Data has {len(dataFrame)} rows.')
+
+        elif userChoice is 4:
+            database = Database()
             deletedColl = database.removeCollection()
             print(f'The collection has been removed successfully from the database.')
 
-        elif userChoice is 4:
+        elif userChoice is 5:
             print('Goodbye!')
             quit()
 
