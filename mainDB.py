@@ -15,7 +15,7 @@ def main(crypto, day_update):
         day_update {[str]} -- date from which we want to start to collect data. Feel free to modify.
 
     Returns:
-        [gzip] -- gzip file stored in a mongoDB named xbt containing the data for the desired crypto and for the desired dates.
+        [gzip] -- gzip file stored in a mongo database named xbt. The file contains the data for the desired crypto and for the desired date.
     """
 
 
@@ -49,6 +49,7 @@ if __name__ == "__main__":
             update_from = database.showAvailableData()[-1]
             main(crypto='XBTUSD', day_update=update_from)
 
+
         elif userChoice is 2:
             database = Database()
             rawData = database.getRawData()
@@ -79,5 +80,7 @@ if __name__ == "__main__":
             quit()
 
         else:
-            print("\n\nSorry, I couldn't understand you. Please select a number between 1-4 to proceed:\n")
+            print("\n\nOops! That is not a valid number. Please try a number between 1-5 to proceed:\n")
+
+
 
