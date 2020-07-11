@@ -51,11 +51,10 @@ class Database(object):
         Database.DATABASE = self.client[self.databaseName]
         print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
-        collections = str(input().lower())
+        collections = str(input())
 
         if collections == 'all':
             print('We are preparing all available collections: ', collections)
-            crypto_data = pd.DataFrame()
             for collection in sorted(Database.DATABASE.list_collection_names()):
                 Database.DATABASE[collection].drop()
 
@@ -104,6 +103,15 @@ class Database(object):
             print(f'Your new collection {date}, has been created successfully')
         except:
             print(f'There is no available data for the date: ', date)
+
+
+
+    def datesDoubleCheck (self, scraped_interval):
+        print('We are collecting empty datasets, wait a moment....')
+        Database.DATABASE = self.client[self.databaseName]
+        double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
+        print('\nSince there is any data, you should double check these dates: \n\n', double_check)
+        return double_check
 
 
 

@@ -1,7 +1,7 @@
 from source.crypto_scraper_db import data_updator
 from source.crypto_scraper_csv import dates_converter
 
-from source.database import Database
+from source.database import Database, DatabaseUpdator
 from source.dataframe_creator import processData
 
 
@@ -40,7 +40,8 @@ if __name__ == "__main__":
         print('Enter 2 if you want to collect RAW data:')
         print('Enter 3 if you want to collect PROCESSED data:')
         print('Enter 4 if you want to delete a collection:')
-        print('Enter 5 to exit:')
+        print('Enter 5 to check dates warnings')
+        print('Enter 6 to exit:')
 
         userChoice = int(input())
 
@@ -76,8 +77,16 @@ if __name__ == "__main__":
             print(f'The collection has been removed successfully from the database.')
 
         elif userChoice is 5:
+            dates = dates_converter('20141122')
+            database = Database()
+            warnings = database.datesDoubleCheck(dates)
+            print('You should double-check the data for these dates: ', warnings)
+
+
+        elif userChoice is 6:
             print('Goodbye!')
             quit()
+
 
         else:
             print("\n\nOops! That is not a valid number. Please try a number between 1-5 to proceed:\n")
