@@ -1,4 +1,6 @@
 import pandas as pd
+
+from tqdm import tqdm
 from datetime import datetime
 
 from .database import DatabaseUpdator
@@ -22,7 +24,7 @@ def data_updator(interval, crypto):
 
 
     print('Interval to be scrapped:', interval[:-1])
-    for date in interval[:-1]:
+    for date in tqdm(interval[:-1]):
         print(f'{date} is being processed...')
 
         dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
