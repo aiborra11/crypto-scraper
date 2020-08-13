@@ -94,11 +94,11 @@ class processData():
 
     def createDataFrame(self):
         dataset = pd.concat([self.dataTotals, self.dataTransact, self.logReturns], axis=1)
-        hl = self.highLow
-        dataset_OH = pd.concat([dataset.reset_index(),
-                                hl.reset_index(drop=True)], axis=1).set_index('timestamp').drop(columns='index')
+        wicks = self.highLow
+        dataset = pd.concat([dataset.reset_index(),
+                                wicks.reset_index(drop=True)], axis=1).set_index('timestamp').drop(columns='index')
 
-        print(dataset_OH)
+        print(dataset)
         return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}to{str(dataset.index[-1]).split(" ")[0]}.csv')
 
 
