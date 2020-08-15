@@ -17,6 +17,7 @@ def main(crypto, day1):
     --------
         {[gzip]}
             File containing the data for the desired crypto and the desired dates.
+
     """
 
     print('Preparing your data...')

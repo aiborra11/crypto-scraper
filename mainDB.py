@@ -20,6 +20,7 @@ def main(crypto, day_update):
     --------
         [gzip]
             File stored in a mongo database containing the data for the desired crypto and the desired date.
+
     """
 
 

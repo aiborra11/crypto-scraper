@@ -10,6 +10,7 @@ class Database(object):
     cryptocurrency (tick level) are stored.
 
     # Execute in your terminal: brew services restart mongodb-community
+
     """
 
     DATABASE = None
@@ -181,6 +182,7 @@ class Database(object):
         --------
             {[Collection]}
                 A new collection into our database for the specified date and currency.
+
         """
 
         available_data = available_data.to_dict(orient='records')
@@ -204,6 +206,7 @@ class Database(object):
         --------
             {[list]}
                 With collection names we should double check.
+
         """
 
         print('We are collecting empty datasets, wait a moment....')
@@ -217,7 +220,7 @@ class Database(object):
 
 class DatabaseUpdator(Database):
     """
-    Class inherits Database class to properly works when updating a new collection of data.
+    Class inherits Database class to properly work when updating a new collection of data.
 
     """
 
