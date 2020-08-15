@@ -4,7 +4,7 @@ import numpy as np
 
 class processData():
     """
-    Process raw data into a determined threshold and creates new features as columns.
+    Converts raw data into a determined frequency and creates new features as columns.
 
     """
     def __init__(self, df):
