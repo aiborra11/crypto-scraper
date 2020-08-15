@@ -8,14 +8,18 @@ from source.dataframe_creator import processData
 
 
 def main(crypto, day_update):
-    """Pipeline to execute the functions from the source.crypto_scraper_db and source.crypto_scraper_csv script.
+    """
+    Pipeline to execute the functions from the source.crypto_scraper_db and source.crypto_scraper_csv script.
 
     Arguments:
+    ----------
         crypto {[str]} -- crypto we are interested in collecting data. Feel free to modify.
         day_update {[str]} -- date from which we want to start to collect data. Feel free to modify.
 
     Returns:
-        [gzip] -- gzip file stored in a mongo database named xbt. The file contains the data for the desired crypto and for the desired date.
+    --------
+        [gzip]
+            File stored in a mongo database containing the data for the desired crypto and the desired date.
     """
 
 

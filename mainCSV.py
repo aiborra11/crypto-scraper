@@ -5,15 +5,20 @@ from source.crypto_scraper_csv import dates_converter, data_obtainer
 
 
 def main(crypto, day1):
-    """Pipeline to execute the functions from the source.crypto_scraper script.
+    """
+    Pipeline to execute the functions from the source.crypto_scraper script.
 
     Arguments:
+    ----------
         crypto {[str]} -- crypto we are interested in collecting data.
         day1 {[str]} -- date from which we want to start to collect data.
 
     Returns:
-        [gzip] -- gzip file containing the data for the desired crypto and the desired dates.
+    --------
+        {[gzip]}
+            File containing the data for the desired crypto and the desired dates.
     """
+
     print('Preparing your data...')
     dates = dates_converter(day1)
     print('Charging first csv...')
