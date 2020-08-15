@@ -18,6 +18,7 @@ def datetimeConverter(df):
     --------
         {[dataframe]}
             Dataframe with the column converted into datetime.
+
     """
 
     df['timestamp'] = df.timestamp.map(lambda t: datetime.strptime(t[:-3], '%Y-%m-%dD%H:%M:%S.%f'))
@@ -36,6 +37,7 @@ def data_updator(interval, crypto):
     --------
         {[dataset]}
             Dataset stored in mongo for a specific date and crypto.
+
     """
 
 

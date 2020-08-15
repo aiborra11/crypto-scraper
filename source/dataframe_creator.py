@@ -100,6 +100,7 @@ class processData():
 
         Returns:
         --------
+        {[DataFrame]}
             Dataframe with the data grouped after the selected frequency.
 
         """
@@ -121,6 +122,7 @@ class processData():
 
         Returns:
         --------
+        {[DataFrame]}
             Dataframe with the sum of the desired columns based on the selected frequency.
 
         """
@@ -140,6 +142,7 @@ class processData():
 
         Returns:
         --------
+        {[DataFrame]}
             Dataframe with the number of transactions performed during the selected frequency.
                 bearTransact: number of bearish transactions.
                 bullTransact: number of bullish transactions.
@@ -169,7 +172,8 @@ class processData():
 
         Returns:
         --------
-        Dataframe with the cryptocurrency smoothed price.
+        {[DataFrame]}
+            Dataframe with the cryptocurrency smoothed price.
 
 
         """
@@ -192,7 +196,8 @@ class processData():
 
         Returns:
         --------
-        Dataframe with the logarithmic returns for the selected column
+        {[DataFrame]}
+            Dataframe with the logarithmic returns for the selected column
 
         """
 
@@ -211,7 +216,8 @@ class processData():
 
         Returns:
         --------
-        Dataframe with the max and min wicks during the selected period of time.
+        {[DataFrame]}
+            Dataframe with the max and min wicks during the selected period of time.
 
         """
 
@@ -238,7 +244,8 @@ class processData():
 
         Returns:
         --------
-        Dataframe with features to work on.
+        {[csv]}
+            Dataframe stored in your data folder with features to work on.
 
         """
 
@@ -246,6 +253,10 @@ class processData():
         wicks = self.highLow
         dataset = pd.concat([dataset.reset_index(),
                                 wicks.reset_index(drop=True)], axis=1).set_index('timestamp').drop(columns='index')
+
+        dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
+                            'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
+                            'TotalTransacts', 'Price_exp', 'LogReturns', 'Low', 'High', ]
 
         print(dataset)
         return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}to{str(dataset.index[-1]).split(" ")[0]}.csv')

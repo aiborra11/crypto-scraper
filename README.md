@@ -1,7 +1,9 @@
 # Crypto Scraper
- **Python script to automatically extract data coming from the orderbook for a desired cryptocurrency.**
+**The scope of this project was to develop a script that eases the collection of data for a specific cryptocurrency.**
+
+_It allows us to to automatically extract raw data coming from the order book, process it and obtain features that will allow us to understand the behaviour of this cryptocurrency._
  
-### Output data
+### Scrapped Raw Data
 
 |   | timestamp                     | symbol | side | size | price  | tickDirection | trdMatchID                           | grossValue | homeNotional       | foreignNotional |
 |---|-------------------------------|--------|------|------|--------|---------------|--------------------------------------|------------|--------------------|-----------------|
@@ -30,13 +32,25 @@
 `homeNotional:` How many BTC the trade was worth.
 
 `foreignNotional:` How many USD the trade was worth.
+
+### Processed Data (4H timeframe sample)
  
+| Timestamp           |       Size |     GrossValue |   Total_BTC |   Total_USD |   ContractsTraded_Size |   ContractsTraded_GrossValue |   BearTransacts |   BullTransacts |   WarTransacts |   TotalTransacts |   Price_exp |   LogReturns |    Low |   High |
+|:--------------------|-----------:|---------------:|------------:|------------:|-----------------------:|-----------------------------:|----------------:|----------------:|---------------:|-----------------:|------------:|-------------:|-------:|-------:|
+| 2018-08-08 04:00:00 |  898925380 | 13626717530308 |    136267   | 8.98925e+08 |           -6.98192e+07 |                 -1.05337e+12 |           78499 |           75084 |          -3415 |           153583 |     6660.76 |   0          | 6712   | 6530   |
+| 2018-08-08 08:00:00 | 1275264682 | 19665996153763 |    196660   | 1.27526e+09 |           -9.41728e+07 |                 -1.45769e+12 |          104325 |           89888 |         -14437 |           194213 |     6550.94 |  -0.0166241  | 6587.5 | 6375.5 |
+| 2018-08-08 12:00:00 |  573375540 |  8848864475447 |     88488.6 | 5.73376e+08 |            2.97127e+07 |                  4.55558e+11 |           55602 |           67695 |          12093 |           123297 |     6501.53 |  -0.00757146 | 6533.5 | 6410   |
+| 2018-08-08 16:00:00 |  541165657 |  8364671941273 |     83646.7 | 5.41166e+08 |           -9.5061e+06  |                 -1.479e+11   |           58820 |           57871 |           -949 |           116691 |     6487.62 |  -0.0021414  | 6514   | 6412   |
+| 2018-08-08 20:00:00 | 1756631258 | 28033960379162 |    280340   | 1.75663e+09 |           -7.31778e+07 |                 -1.16484e+12 |          138093 |          119938 |         -18155 |           258031 |     6357.44 |  -0.0202705  | 6488   | 6100   |
  
- 
-### Overview
+
+
+### Notes
 Depending on the crypto, there might be a lot of data to collect, remember is data from the order book. Therefore, the script will need time. 
 
-In case the script is not working on your machine, I would reduce the dates intervals and create more csv files to free some memory while processing the data. Feel free to reach me in case you need some help.
+In case the script is not working on your machine, I would reduce the dates intervals and create more csv files to free some memory while processing the data. 
+
+Feel free to reach me in case you need some help.
 
  
 ### Files
@@ -47,6 +61,6 @@ In case the script is not working on your machine, I would reduce the dates inte
 
 **mainCSV:** Executable script to collect all the data from the orderbook starting at a specific date. We will carry on with some feature engineering and store it into a csv compressed as gzip file. When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default is the first available.). 
 
-**mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically stored in a mongoDB (in my case I named it "xbt". When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default will be the date of the last time we executed this script.). 
+**mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically store it in a mongoDB (in my case I named it "xbt". When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default will be the date of the last time we executed this script.). 
 
 ********
