@@ -63,4 +63,9 @@ Feel free to reach me in case you need some help.
 
 **mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically store it in a mongoDB (in my case I named it "xbt". When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default will be the date of the last time we executed this script.). 
 
+
+### Part II
+
+https://github.com/aiborra11/BTC-Manipulations
+
 ********
