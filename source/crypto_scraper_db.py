@@ -7,19 +7,35 @@ from .database import DatabaseUpdator
 
 
 def datetimeConverter(df):
+    """
+    Converts into datetime format.
+
+    Arguments:
+    ----------
+        df {[dataframe]} -- Dataframe and column.
+
+    Returns:
+    --------
+        {[dataframe]}
+            Dataframe with the column converted into datetime.
+    """
+
     df['timestamp'] = df.timestamp.map(lambda t: datetime.strptime(t[:-3], '%Y-%m-%dD%H:%M:%S.%f'))
     return df
 
 def data_updator(interval, crypto):
-    """Iterates through the dates list collecting the data for the specified cryptocurrency.
-    The dates list contains the dates from which we are interested in collecting data.
+    """
+    Iterates through a list of dates scraping the data for the specified cryptocurrency.
 
     Arguments:
-        interval {[list]} -- interval of dates we are going to collect.
-        crypto {[str]} -- crypto data we are willing to collect.
+    ----------
+        interval {[list]} -- Interval of dates we are willing to collect.
+        crypto {[str]} -- Cryptocurrency name we are willing to collect.
 
     Returns:
-        [dataset] -- dataset stored in mongo for a specific date
+    --------
+        {[dataset]}
+            Dataset stored in mongo for a specific date and crypto.
     """
 
 

@@ -5,15 +5,39 @@ from pymongo import MongoClient
 
 
 class Database(object):
-    # brew services restart mongodb-community
+    """
+    Access to different databases where daily collections containing raw data from the orderbook for a specified
+    cryptocurrency (tick level) are stored.
+
+    # Execute in your terminal: brew services restart mongodb-community
+    """
+
     DATABASE = None
 
     def __init__(self):
+        """
+        Connection to your localhost database and first function execution.
+
+        """
+
         self.client = MongoClient('localhost', 27017)
         self.databaseName = str(self.selectDatabase())
 
 
     def selectDatabase(self):
+        """
+        Shows a list of databases you can try to connect and asks to write the one you are interested.
+
+        Arguments:
+        ----------
+        ()
+
+        Returns:
+        --------
+            Access to the written database.
+
+        """
+
         print(f'Available databases: {sorted(self.client.list_database_names())}.')
         print('Please, write the one you are interested in:')
         self.databaseName = str(input())
@@ -25,6 +49,21 @@ class Database(object):
 
 
     def getRawData(self, query={}):
+        """
+        Shows a list of available collections we can find inside the selected database and asks to select the ones
+        you are willing to collect.
+
+        Arguments:
+        ----------
+        query {[str]} -- Any filter you are willing to apply. By default it brings all the data inside the collection.
+
+        Returns:
+        --------
+            {[DataFrame]}
+                Containing all the scraped and stored data for the selected dates and cryptocurrency.
+
+        """
+
         Database.DATABASE = self.client[self.databaseName]
         print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Select the ones you are interested in, or write "all" if you want them all')
@@ -54,6 +93,20 @@ class Database(object):
 
 
     def removeCollection(self):
+        """
+        Shows the available collections and asks to delete any collections we are no longer interested in storing
+        into our database.
+
+        Arguments:
+        ----------
+        ()
+
+        Returns:
+        --------
+        ()
+
+        """
+
         Database.DATABASE = self.client[self.databaseName]
         print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
@@ -77,6 +130,19 @@ class Database(object):
 
 
     def showAvailableData(self):
+        """
+        Shows a list of available collections we can find inside the selected database and asks if we are interested
+        in updating our database with new data.
+
+        Arguments:
+        ----------
+        ()
+        Returns:
+        --------
+            Collections we are willing to include into our database.
+
+        """
+
         Database.DATABASE = self.client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
@@ -103,6 +169,20 @@ class Database(object):
 
     @staticmethod
     def updateDatabase(date, available_data):
+        """
+        Updates our database with new scraped data.
+
+        Arguments:
+        ----------
+        date {[str]} -- Date to include in our database.
+        available_data -- Scraped data we will convert into a dict to store into our mongo database.
+
+        Returns:
+        --------
+            {[Collection]}
+                A new collection into our database for the specified date and currency.
+        """
+
         available_data = available_data.to_dict(orient='records')
         try:
             Database.DATABASE[date].insert_many(available_data)
@@ -113,6 +193,19 @@ class Database(object):
 
 
     def datesDoubleCheck (self, scraped_interval):
+        """
+        Checks for empty collections.
+
+        Arguments:
+        ----------
+        scraped_interval {[list]} -- Dates we are going to check.
+
+        Returns:
+        --------
+            {[list]}
+                With collection names we should double check.
+        """
+
         print('We are collecting empty datasets, wait a moment....')
         Database.DATABASE = self.client[self.databaseName]
         double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
@@ -123,6 +216,11 @@ class Database(object):
 
 
 class DatabaseUpdator(Database):
+    """
+    Class inherits Database class to properly works when updating a new collection of data.
+
+    """
+
     def __init__(self):
         pass
 
