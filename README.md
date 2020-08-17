@@ -68,7 +68,7 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 `Price_exp`: Price smoothed with an exponential moving average of 'i' periods.
 
-`LogReturns`: Logarithmic returns from period to another.
+`LogReturns`: Logarithmic returns from one period to another.
 
 `High`: Highest price reached within the period. 
 
