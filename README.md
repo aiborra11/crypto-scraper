@@ -35,7 +35,7 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 ### Processed Data (4H timeframe sample)
  
-| Timestamp           |       Size |     GrossValue |   Total_BTC |   Total_USD |   ContractsTraded_Size |   ContractsTraded_GrossValue |   BearTransacts |   BullTransacts |   WarTransacts |   TotalTransacts |   Price_exp |   LogReturns |    Low |   High |
+| Timestamp           |       Size |     GrossValue |   Total_BTC |   Total_USD |   ContractsTraded_Size |   ContractsTraded_GrossValue |   BearTransacts |   BullTransacts |   WarTransacts |   TotalTransacts |   Price_exp |   LogReturns |   High |    Low |
 |:--------------------|-----------:|---------------:|------------:|------------:|-----------------------:|-----------------------------:|----------------:|----------------:|---------------:|-----------------:|------------:|-------------:|-------:|-------:|
 | 2018-08-08 04:00:00 |  898925380 | 13626717530308 |    136267   | 8.98925e+08 |           -6.98192e+07 |                 -1.05337e+12 |           78499 |           75084 |          -3415 |           153583 |     6660.76 |   0          | 6712   | 6530   |
 | 2018-08-08 08:00:00 | 1275264682 | 19665996153763 |    196660   | 1.27526e+09 |           -9.41728e+07 |                 -1.45769e+12 |          104325 |           89888 |         -14437 |           194213 |     6550.94 |  -0.0166241  | 6587.5 | 6375.5 |
