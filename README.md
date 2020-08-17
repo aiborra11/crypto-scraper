@@ -104,8 +104,5 @@ Feel free to reach me in case you need some help.
 https://github.com/aiborra11/BTC-Manipulations
 
 
-### Part II
-
-https://github.com/aiborra11/BTC-Manipulations
 
 ********
