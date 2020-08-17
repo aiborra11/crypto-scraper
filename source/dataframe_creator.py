@@ -256,7 +256,7 @@ class processData():
 
         dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                            'TotalTransacts', 'Price_exp', 'LogReturns', 'Low', 'High', ]
+                            'TotalTransacts', 'Price_exp', 'LogReturns', 'High', 'Low', ]
 
         print(dataset)
         return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}to{str(dataset.index[-1]).split(" ")[0]}.csv')

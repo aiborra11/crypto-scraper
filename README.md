@@ -35,7 +35,7 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 ### Processed Data (4H timeframe sample)
  
-| Timestamp           |       Size |     GrossValue |   Total_BTC |   Total_USD |   ContractsTraded_Size |   ContractsTraded_GrossValue |   BearTransacts |   BullTransacts |   WarTransacts |   TotalTransacts |   Price_exp |   LogReturns |    Low |   High |
+| Timestamp           |       Size |     GrossValue |   Total_BTC |   Total_USD |   ContractsTraded_Size |   ContractsTraded_GrossValue |   BearTransacts |   BullTransacts |   WarTransacts |   TotalTransacts |   Price_exp |   LogReturns |   High |    Low |
 |:--------------------|-----------:|---------------:|------------:|------------:|-----------------------:|-----------------------------:|----------------:|----------------:|---------------:|-----------------:|------------:|-------------:|-------:|-------:|
 | 2018-08-08 04:00:00 |  898925380 | 13626717530308 |    136267   | 8.98925e+08 |           -6.98192e+07 |                 -1.05337e+12 |           78499 |           75084 |          -3415 |           153583 |     6660.76 |   0          | 6712   | 6530   |
 | 2018-08-08 08:00:00 | 1275264682 | 19665996153763 |    196660   | 1.27526e+09 |           -9.41728e+07 |                 -1.45769e+12 |          104325 |           89888 |         -14437 |           194213 |     6550.94 |  -0.0166241  | 6587.5 | 6375.5 |
@@ -43,6 +43,36 @@ _It allows us to to automatically extract raw data coming from the order book, p
 | 2018-08-08 16:00:00 |  541165657 |  8364671941273 |     83646.7 | 5.41166e+08 |           -9.5061e+06  |                 -1.479e+11   |           58820 |           57871 |           -949 |           116691 |     6487.62 |  -0.0021414  | 6514   | 6412   |
 | 2018-08-08 20:00:00 | 1756631258 | 28033960379162 |    280340   | 1.75663e+09 |           -7.31778e+07 |                 -1.16484e+12 |          138093 |          119938 |         -18155 |           258031 |     6357.44 |  -0.0202705  | 6488   | 6100   |
  
+ 
+`Timestamp:` Timerange the data is grouped and when.
+
+`Size`: Amount of contracts traded during the selected frequency (absolute terms).
+
+`GrossValue`: Amount of Satoshis the trades were worth during the selected frequency (absolute terms). 
+
+`Total_BTC`: Amount of BTC the trades were worth during the selected frequency (absolute terms). 
+
+`Total_USD`: Amount of USD the trades were worth during the selected frequency (absolute terms). 
+
+`ContractsTraded_Size`: Total value in dollars of the contracts traded during the selected frequency in USD (shorts vs longs).
+
+`ContractsTraded_GrossValue`: Total value in satoshis of the contracts traded during the selected frequency in USD (shorts vs longs).
+
+`BearTransacts`: Number of bearish (shorts) transactions during the period.
+
+`BullTransacts`: Number of bullish (longs) transactions during the period.
+
+`WarTransacts`: Bullish minus bearish transactions.
+
+`TotalTransacts`: Total number of transactions done during the period (absolute terms.).
+
+`Price_exp`: Price smoothed with an exponential moving average of 'i' periods.
+
+`LogReturns`: Logarithmic returns from period to another.
+
+`High`: Highest price reached within the period. 
+
+`Low`: Lowest price reached within the period. 
 
 
 ### Notes
@@ -55,12 +85,22 @@ Feel free to reach me in case you need some help.
  
 ### Files
 
-**data:** You should create a folder named "data" where the collected data will be stored (only if we execute the mainCSV.py). The path should be in the previous location from the script.
+**data:** Where the collected/processed data will be stored. The path should be in the previous location from the script.
 
 **source:** Folder containing the magic. 
 
 **mainCSV:** Executable script to collect all the data from the orderbook starting at a specific date. We will carry on with some feature engineering and store it into a csv compressed as gzip file. When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default is the first available.). 
 
-**mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically store it in a mongoDB (in my case I named it "xbt". When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default will be the date of the last time we executed this script.). 
+**mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically store it in a mongoDB (in my case I named it "xbt". When executing, we will only need to follow the steps according to our intentions: 
+    
+    1. Update database.
+    2. Collect RAW data.
+    3. Collect PROCESSED data.
+    4. Delete collection.
+    5. Check warnings (empty files.).
+
+
+### Part II
+https://github.com/aiborra11/BTC-Manipulations
 
 ********
