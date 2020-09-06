@@ -33,7 +33,7 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 `foreignNotional:` How many USD the trade was worth.
 
-### Processed Data (4H timeframe sample)
+### Processed Data (4H timeframe sample) 
  
  | timestamp           |       Size |     GrossValue |   Total_BTC |   Total_USD |   ContractsTraded_Size |   ContractsTraded_GrossValue |   BearTransacts |   BullTransacts |   WarTransacts |   TotalTransacts |   Price_exp |   LogReturns |   High |    Low |   Open |   Close |
 |:--------------------|-----------:|---------------:|------------:|------------:|-----------------------:|-----------------------------:|----------------:|----------------:|---------------:|-----------------:|------------:|-------------:|-------:|-------:|-------:|--------:|
