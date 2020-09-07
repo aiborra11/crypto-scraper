@@ -21,8 +21,7 @@ class processData():
         self.dataTotals = self.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size', 'ContractsTraded_grossValue'])
         self.dataTransact = self.counterGrouper(cols=['side'])
         self.smoothedPx = self.emaSmoother(cols=['price'])
-        self.highLow = self.wicksFinder(col='price')
-        self.openClose = self.pxOpenClose(col='price')
+        self.px = self.ohcl(cols='price')
         self.logReturns = self.percentageChange(col='price')
 
 
@@ -207,7 +206,7 @@ class processData():
 
 
 
-    def wicksFinder(self, col):
+    def ohcl(self, cols):
         """
         Finds the max and lows for the selected frequency.
 
@@ -222,45 +221,21 @@ class processData():
 
         """
 
-        maxList = []
-        minList = []
-        for val in self.df[col].groupby(pd.Grouper(freq=self.frequency)):
-            maxList.append(max(val[1]))
-            minList.append(min(val[1]))
 
-        self.highLow = pd.concat([pd.DataFrame(maxList).rename(columns={0: 'High'}),
-                                  pd.DataFrame(minList).rename(columns={0: 'Low'})], axis=1)
+        self.smoothedPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .max()).shift(1, freq=self.frequency)
 
-        return self.highLow.reset_index()
+        self.smoothedPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .min()).shift(1, freq=self.frequency)
 
-    def pxOpenClose(self, col):
-        """
-        Finds the max and lows for the selected frequency.
 
-        Arguments:
-        ----------
-        cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
+        self.smoothedPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .first()).shift(1, freq=self.frequency)
 
-        Returns:
-        --------
-        {[DataFrame]}
-            Dataframe with the max and min wicks during the selected period of time.
+        self.smoothedPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .nth(-1)).shift(1, freq=self.frequency)
 
-        """
-
-        open = []
-        close = []
-        for val in self.df[col].groupby(pd.Grouper(freq=self.frequency)):
-            open.append(val[1][0])
-            close.append(val[1][-1])
-
-        print('open', open)
-        print('close', close)
-        self.openClose = pd.concat([pd.DataFrame(open).rename(columns={0: 'Open'}),
-                                    pd.DataFrame(close).rename(columns={0: 'Close'})], axis=1)
-
-        return self.openClose.reset_index()
-
+        return self.smoothedPx
 
 
     def createDataFrame(self):
@@ -279,19 +254,13 @@ class processData():
         """
 
         dataset = pd.concat([self.dataTotals, self.dataTransact, self.logReturns], axis=1)
-        wicks = self.highLow
-        dataset = pd.concat([dataset.reset_index(),
-                                wicks.reset_index(drop=True)], axis=1).set_index('timestamp').drop(columns='index')
-        print(dataset)
-        price = self.openClose
-        dataset = pd.concat([dataset.reset_index(),
-                                price.reset_index(drop=True)], axis=1).set_index('timestamp').drop(columns='index')
-        print('aaa', dataset.columns)
+
+
         dataset.columns = ['Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                            'TotalTransacts', 'Price_exp', 'LogReturns', 'High', 'Low', 'Open', 'Close']
+                            'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close', 'LogReturns']
 
-        print('bbb',dataset)
+        print('Output dataset:\n\n', dataset)
         return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}to{str(dataset.index[-1]).split(" ")[0]}.csv')
 
 
