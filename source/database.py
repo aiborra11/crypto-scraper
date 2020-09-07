@@ -73,7 +73,7 @@ class Database(object):
         if collections == 'all':
             print('We are preparing all available collections: ', collections)
             crypto_data = pd.DataFrame()
-            for collection in tqdm(sorted(Database.DATABASE.list_collection_names())):
+            for collection in tqdm(sorted(Database.DATABASE.list_collection_names())[:500]):
                 data = pd.DataFrame(Database.DATABASE[collection].find(query))
                 crypto_data = pd.concat([crypto_data, data])
             return crypto_data.set_index('timestamp')
