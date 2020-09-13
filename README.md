@@ -79,16 +79,14 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 
 ### Notes
-Depending on the crypto, there might be a lot of data to collect, remember is data from the order book. Therefore, the script will need time. 
-
-In case the script is not working on your machine, I would reduce the dates intervals and create more csv files to free some memory while processing the data. 
+Depending on the crypto, there might be a lot of data to collect, remember is data from the order book. Therefore, the script will need time and you might run into memory issues stopping the script. 
 
 Feel free to reach me in case you need some help.
 
  
 ### Files
 
-**data:** Where the collected/processed data will be stored. The path should be in the previous location from the script.
+**data:** Where the collected/processed data will be stored. You will save one .csv file per date in the desired frequency. The path should be in the previous location from the script.
 
 **source:** Folder containing the magic. 
 
@@ -105,5 +103,7 @@ Feel free to reach me in case you need some help.
 
 ### Part II
 https://github.com/aiborra11/BTC-Manipulations
+
+
 
 ********

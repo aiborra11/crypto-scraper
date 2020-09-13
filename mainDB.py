@@ -4,6 +4,9 @@ from source.crypto_scraper_csv import dates_converter
 from source.database import Database
 from source.dataframe_creator import processData
 
+from tqdm import tqdm
+import pandas as pd
+
 
 
 
@@ -50,44 +53,47 @@ if __name__ == "__main__":
 
         userChoice = int(input())
 
-        if userChoice is 1:
+        if userChoice == 1:
             database = Database()
             update_from = database.showAvailableData()[-1]
             main(crypto='XBTUSD', day_update=update_from)
 
 
-        elif userChoice is 2:
+        elif userChoice == 2:
             database = Database()
             rawData = database.getRawData()
             print(rawData.head())
             print(rawData.tail())
             print(f'Your dataset has {len(rawData)} rows.')
 
-        elif userChoice is 3:
+        elif userChoice == 3:
             database = Database()
             rawData = database.getRawData()
-            print(f'Your Raw Data has {len(rawData)} rows.')
-            print(rawData.head())
-            print(rawData.tail())
+            print(f'You have {len(rawData)} collections in your Raw Data database.')
+            print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
+            frequency = str(input())
+            for raw in tqdm(rawData):
+                df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
+                if df_raw.empty:
+                    print(f'There is no data for {raw}. We are proceding to delete this collection')
+                    database.removeCollection(raw)
+                else:
+                    processedData = processData(df_raw, frequency)
+                    dataFrame = processedData.createDataFrame()
 
-            processedData = processData(rawData)
-            dataFrame = processedData.createDataFrame()
-
-            print(f'Your Processed Data has been stored in your data folder.')
-
-        elif userChoice is 4:
+        elif userChoice == 4:
             database = Database()
             deletedColl = database.removeCollection()
             print(f'The collection has been removed successfully from the database.')
 
-        elif userChoice is 5:
+        elif userChoice == 5:
             dates = dates_converter('20141122')
             database = Database()
             warnings = database.datesDoubleCheck(dates)
             print('You should double-check the data for these dates: ', warnings)
 
 
-        elif userChoice is 6:
+        elif userChoice == 6:
             print('Goodbye!')
             quit()
 
