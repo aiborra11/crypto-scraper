@@ -66,26 +66,20 @@ class Database(object):
         """
 
         Database.DATABASE = self.client[self.databaseName]
-        print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
+        print(f'There are {len(Database.DATABASE.list_collection_names())} available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Select the ones you are interested in, or write "all" if you want them all')
         collections = str(input().lower())
 
         if collections == 'all':
             print('We are preparing all available collections: ', collections)
-            crypto_data = pd.DataFrame()
-            for collection in tqdm(sorted(Database.DATABASE.list_collection_names())[:500]):
-                data = pd.DataFrame(Database.DATABASE[collection].find(query))
-                crypto_data = pd.concat([crypto_data, data])
-            return crypto_data.set_index('timestamp')
+            return list(sorted(Database.DATABASE.list_collection_names()))
+
 
         elif len(collections) > 1:
             collections_date = collections.replace(',', '').replace("'", '').split(' ')
             print('We are preparing collections for: ', collections_date)
-            crypto_data = pd.DataFrame()
-            for collection in tqdm(sorted(collections_date)):
-                data = pd.DataFrame(Database.DATABASE[collection].find(query))
-                crypto_data = pd.concat([crypto_data, data])
-            return crypto_data.set_index('timestamp')
+            return collections_date
+
 
         else:
             print('We are preparing your collection for: ', collections)
@@ -93,7 +87,7 @@ class Database(object):
 
 
 
-    def removeCollection(self):
+    def removeCollection(self, collection=''):
         """
         Shows the available collections and asks to delete any collections we are no longer interested in storing
         into our database.
@@ -107,26 +101,30 @@ class Database(object):
         ()
 
         """
-
-        Database.DATABASE = self.client[self.databaseName]
-        print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
-        print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
-        collections = str(input())
-
-        if collections == 'all':
-            print('We are preparing all available collections: ', collections)
-            for collection in tqdm(sorted(Database.DATABASE.list_collection_names())):
-                Database.DATABASE[collection].drop()
-
-        elif len(collections) > 1:
-            collections_date = collections.replace(',', '').replace("'", '').split(' ')
-            print("We are deleting the collections you've selected: ", collections_date)
-            for collection in tqdm(sorted(collections_date)):
-                Database.DATABASE[collection].drop()
+        if collection:
+            Database.DATABASE[collection].drop()
+            print(f'The database {collection} has been deleted successfully!')
 
         else:
-            print("We are deleting the collection you've selected: ", collections)
-            Database.DATABASE[collections].drop()
+            Database.DATABASE = self.client[self.databaseName]
+            print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
+            print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
+            collections = str(input())
+
+            if collections == 'all':
+                print('We are preparing all available collections: ', collections)
+                for collection in tqdm(sorted(Database.DATABASE.list_collection_names())):
+                    Database.DATABASE[collection].drop()
+
+            elif len(collections) > 1:
+                collections_date = collections.replace(',', '').replace("'", '').split(' ')
+                print("We are deleting the collections you've selected: ", collections_date)
+                for collection in tqdm(sorted(collections_date)):
+                    Database.DATABASE[collection].drop()
+
+            else:
+                print("We are deleting the collection you've selected: ", collections)
+                Database.DATABASE[collections].drop()
 
 
 

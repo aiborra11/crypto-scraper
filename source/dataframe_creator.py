@@ -7,7 +7,7 @@ class processData():
     Converts raw data into a determined frequency and creates new features as columns.
 
     """
-    def __init__(self, df):
+    def __init__(self, df, frequency):
         """
         Allowing different functions to inherit from each other.
 
@@ -16,7 +16,8 @@ class processData():
         self.noDuplicates = self.duplicatesRemover()
         self.dataClean = self.dataCleaner(['', 'symbol', 'trdMatchID'])
         self.battle = self.bullsVsBears(['size', 'grossValue'])
-        self.frequency = self.askFrequency()
+
+        self.frequency = frequency
 
         self.dataTotals = self.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size', 'ContractsTraded_grossValue'])
         self.dataTransact = self.counterGrouper(cols=['side'])
@@ -38,9 +39,8 @@ class processData():
             Dataframe with no duplicated transactions.
 
         """
-
         self.noDuplicates = self.df.drop_duplicates(keep='first')
-        print(f'{len(self.df) - len(self.noDuplicates)} rows have been deleted since they were duplicated')
+        # print(f'{len(self.df) - len(self.noDuplicates)} rows have been deleted since they were duplicated')
         return self.noDuplicates
 
 
@@ -58,12 +58,12 @@ class processData():
                 Containing all the scraped and stored data for the selected dates and cryptocurrency.
 
         """
-
+        # print('Cleaning columns we no longer need...')
         columns_delete = columnsList
         self.dataClean = self.df[[col for col in self.df.columns if col not in columns_delete]] \
             .rename(columns={'foreignNotional': 'usdTotal',
                                 'homeNotional': 'btcTotal'})
-        return self.dataClean
+        return self.dataClean.set_index('timestamp')
 
 
     def bullsVsBears(self, cols):
@@ -82,31 +82,13 @@ class processData():
                 modified to evaluate if the transaction was a short or a long.
 
         """
+        # print('Converting shorts into negative and longs into positives...')
 
         filter_sell = self.dataClean['side'] == 'Sell'
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
         return self.dataClean
-
-
-    def askFrequency(self):
-        """
-        Frequency we would like to receive the data.
-
-        Arguments:
-        ----------
-        ()
-
-        Returns:
-        --------
-        {[DataFrame]}
-            Dataframe with the data grouped after the selected frequency.
-
-        """
-        print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
-        self.frequency = str(input())
-        return self.frequency
 
 
     def sumGrouper(self, cols):
@@ -127,6 +109,7 @@ class processData():
 
         """
 
+        # print('Calculating total values...')
         self.dataSum = pd.DataFrame(self.battle.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                     .sum()).shift(1, freq=self.frequency)
         return self.dataSum
@@ -151,6 +134,7 @@ class processData():
 
         """
 
+        # print('Calculating the total number of transactions...')
         transactions = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency),
                                                          self.battle['side'] == 'Buy'])[cols]
                                                                         .count()).unstack('side')
@@ -178,6 +162,7 @@ class processData():
 
         """
 
+        # print('Calculating the smoothed price...')
         for t in self.dataTransact['totalTransact'].values:
             exp_mov_avg = self.battle.ewm(span=t, adjust=False).mean()
 
@@ -201,6 +186,7 @@ class processData():
 
         """
 
+        # print('Calculating log returns...')
         self.smoothedPx['pctChg'] = pd.DataFrame((np.log(1 + self.smoothedPx[col].pct_change()))).fillna(0)
         return self.smoothedPx
 
@@ -221,6 +207,7 @@ class processData():
 
         """
 
+        # print('Calculating open, high, low and close values...')
 
         self.smoothedPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .max()).shift(1, freq=self.frequency)
@@ -253,6 +240,7 @@ class processData():
 
         """
 
+        # print('Creating your dataframe...')
         dataset = pd.concat([self.dataTotals, self.dataTransact, self.logReturns], axis=1)
 
 
@@ -260,7 +248,6 @@ class processData():
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
                             'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close', 'LogReturns']
 
-        print('Output dataset:\n\n', dataset)
         return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}to{str(dataset.index[-1]).split(" ")[0]}.csv')
 
 
