@@ -80,7 +80,6 @@ if __name__ == "__main__":
                 else:
                     processedData = processData(df_raw, frequency)
                     dataFrame = processedData.createDataFrame()
-                    # print(f'Your Processed Data has been stored in your data folder.')
 
         elif userChoice == 4:
             database = Database()
