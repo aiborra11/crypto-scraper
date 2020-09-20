@@ -109,7 +109,6 @@ class processData():
 
         """
 
-        # print('Calculating total values...')
         self.dataSum = pd.DataFrame(self.battle.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                     .sum()).shift(1, freq=self.frequency)
         return self.dataSum
@@ -248,7 +247,8 @@ class processData():
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
                             'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close', 'LogReturns']
 
-        return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
+        return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.gz',
+                                                                                    index=True, compression='gzip')
 
 
 

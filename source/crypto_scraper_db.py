@@ -24,7 +24,7 @@ def datetimeConverter(df):
     df['timestamp'] = df.timestamp.map(lambda t: datetime.strptime(t[:-3], '%Y-%m-%dD%H:%M:%S.%f'))
     return df
 
-def data_updator(interval, crypto):
+def data_updator(interval):
     """
     Iterates through a list of dates scraping the data for the specified cryptocurrency.
 
@@ -42,12 +42,15 @@ def data_updator(interval, crypto):
 
 
     print('Interval to be scrapped:', interval[:-1])
+    cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{interval[-2]}.csv.gz')
+
+    print('\n\nChoose from the list below the cryptocurrency pair you are interested:\n', cryptos['symbol'].unique())
+    crypto = str(input()).upper()
+
     for date in tqdm(interval[:-1]):
         print(f'{date} is being processed...')
-
         dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
         crypto_data = dataset[dataset['symbol'] == crypto]
         crypto_data_indexed = datetimeConverter(crypto_data)
 
         DatabaseUpdator.updateDatabase(str(date), crypto_data_indexed)
-
