@@ -10,7 +10,7 @@ import pandas as pd
 
 
 
-def main(crypto, day_update):
+def main(day_update):
     """
     Pipeline to execute the functions from the source.crypto_scraper_db and source.crypto_scraper_csv script.
 
@@ -31,7 +31,7 @@ def main(crypto, day_update):
     dates = dates_converter(day_update)
 
     print('Charging data to update...')
-    data_updator(dates, crypto)
+    data_updator(dates)
 
 
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         if userChoice == 1:
             database = Database()
             update_from = database.showAvailableData()[-1]
-            main(crypto='XBTUSD', day_update=update_from)
+            main(day_update=update_from)
 
 
         elif userChoice == 2:

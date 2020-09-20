@@ -4,7 +4,7 @@ import pandas as pd
 from source.crypto_scraper_csv import dates_converter, data_obtainer
 
 
-def main(crypto, day1):
+def main(day1):
     """
     Pipeline to execute the functions from the source.crypto_scraper script.
 
@@ -20,6 +20,11 @@ def main(crypto, day1):
 
     """
 
+    cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{day1}.csv.gz')
+
+    print('\n\nChoose from the list below the cryptocurrency pair you are interested:\n', cryptos['symbol'].unique())
+    crypto = str(input()).upper()
+
     print('Preparing your data...')
     dates = dates_converter(day1)
     print('Charging first csv...')
@@ -33,18 +38,3 @@ def main(crypto, day1):
     print('Charging fourth csv...')
     time.sleep(15)
     pd.DataFrame(data_obtainer(dates[1500:], crypto, 'data4gzip'))
-
-
-
-
-if __name__ == "__main__":
-    """
-    
-    FEEL FREE TO MODIFY THESE STRINGS TO COLLECT THE DESIRED DATA
-    
-    """
-    # rawData = Database().initialize('btc_data')
-    # print(rawData[-5])
-
-
-    main(crypto='XBTUSD', day1='20141122')
