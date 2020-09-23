@@ -69,21 +69,26 @@ class Database(object):
         print(f'There are {len(Database.DATABASE.list_collection_names())} available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Select the ones you are interested in, or write "all" if you want them all')
         collections = str(input().lower())
-
         if collections == 'all':
             print('We are preparing all available collections: ', collections)
-            return list(sorted(Database.DATABASE.list_collection_names()))
+            collections_date = list(sorted(Database.DATABASE.list_collection_names()))
 
-
-        elif len(collections) > 1:
-            collections_date = collections.replace(',', '').replace("'", '').split(' ')
-            print('We are preparing collections for: ', collections_date)
-            return collections_date
+            raw_data = pd.DataFrame()
+            for c in collections_date:
+                raw_data = pd.concat([raw_data, pd.DataFrame(Database.DATABASE[c].find(query))])
+            return raw_data.to_csv(f'data/raw_{str(collections_date[0])}_{collections_date[-1]}.csv'), \
+                                                            list(sorted(Database.DATABASE.list_collection_names()))
 
 
         else:
-            print('We are preparing your collection for: ', collections)
-            return pd.DataFrame(Database.DATABASE[collections].find(query)).set_index('timestamp')
+            collections_date = sorted(collections.replace(',', '').replace("'", '').split(' '))
+            print('We are preparing collections for: ', collections_date)
+
+            raw_data = pd.DataFrame()
+            for c in collections_date:
+                raw_data = pd.concat([raw_data, pd.DataFrame(Database.DATABASE[c].find(query))])
+            return raw_data.to_csv(f'data/raw_{str(collections_date[0])}_{collections_date[-1]}.csv'), collections_date
+
 
 
 

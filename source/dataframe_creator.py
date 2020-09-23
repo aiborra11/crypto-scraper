@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 
-class processData():
+class processData(object):
     """
     Converts raw data into a determined frequency and creates new features as columns.
 
@@ -39,8 +40,13 @@ class processData():
             Dataframe with no duplicated transactions.
 
         """
-        self.noDuplicates = self.df.drop_duplicates(keep='first')
+        self.df = self.df[self.df['timestamp'].notna()]
+        self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
         # print(f'{len(self.df) - len(self.noDuplicates)} rows have been deleted since they were duplicated')
+        # self.noDuplicates = self.battle.reset_index()
+        self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
+            lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
+        # self.battle.set_index('timestamp', inplace=True)
         return self.noDuplicates
 
 
@@ -60,7 +66,7 @@ class processData():
         """
         # print('Cleaning columns we no longer need...')
         columns_delete = columnsList
-        self.dataClean = self.df[[col for col in self.df.columns if col not in columns_delete]] \
+        self.dataClean = self.noDuplicates[[col for col in self.noDuplicates.columns if col not in columns_delete]] \
             .rename(columns={'foreignNotional': 'usdTotal',
                                 'homeNotional': 'btcTotal'})
         return self.dataClean.set_index('timestamp')
@@ -108,11 +114,28 @@ class processData():
             Dataframe with the sum of the desired columns based on the selected frequency.
 
         """
-
-        self.dataSum = pd.DataFrame(self.battle.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                    .sum()).shift(1, freq=self.frequency)
+        # try:
+        self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols]
+                                                                .sum()).shift(1, freq=self.frequency)
         return self.dataSum
-
+        # except:
+        #     self.battle = self.battle.reset_index()
+        #     self.battle['timestamp'] = self.battle['timestamp'].map(lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
+        #     self.battle.set_index('timestamp', inplace=True)
+        # #     self.battle = self.battle.reset_index()
+        # #     for num, val in enumerate(self.battle['timestamp']):
+        # #         self.battle['timestamp'] = str(val).replace(' ', 'D')
+        # #
+        # # # self.battle = self.battle.reset_index()
+        # # print(self.battle)
+        # # self.battle = self.battle.drop_duplicates(keep='first')
+        # # self.battle['timestamp'] = self.battle['timestamp'].map(lambda t: datetime.strptime(str(t)[:-3], '%Y-%m-%dD%H:%M:%S.%f')).set_index('timestamp')
+        # #
+        #     self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols]
+        #                                 .sum()).shift(1, freq=self.frequency)
+        #
+        #     print(self.dataSum)
+        #     return self.dataSum
 
     def counterGrouper(self, cols):
         """
@@ -140,6 +163,7 @@ class processData():
         transactions.columns = transactions.columns.droplevel()
         self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'}) \
                                                                             .shift(1, freq=self.frequency)
+
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
         return self.dataTransact
@@ -247,8 +271,4 @@ class processData():
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
                             'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close', 'LogReturns']
 
-        return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.gz',
-                                                                                    index=True, compression='gzip')
-
-
-
+        return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
