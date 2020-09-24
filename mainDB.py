@@ -61,21 +61,24 @@ if __name__ == "__main__":
 
         elif userChoice == 2:
             database = Database()
-            rawData = database.getRawData()[0]
-            # print(rawData.head())
-            # print(rawData.tail())
-            # print(f'Your dataset has {len(rawData)} rows.')
+            rawData = database.getRawData()
+            for raw in tqdm(rawData):
+                df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
+                print('Preparing your RAW data for: ', raw)
+                df_raw.to_csv(f'data/RAW_{raw}.csv')
+
 
         elif userChoice == 3:
             database = Database()
-            rawData = database.getRawData()[1]
+            rawData = database.getRawData()
+            print(rawData)
             # print(f'You have {len(rawData)} collections in your Raw Data database.')
             print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
             frequency = str(input()).upper()
             for raw in tqdm(rawData):
-                df_raw = pd.DataFrame(Database.DATABASE[raw].find({}), )
+                df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
                 if df_raw.empty:
-                    print(f'There is no data for {raw}. We are proceding to delete this collection')
+                    print(f'There is no data for {raw}. Deleting this collection')
                     database.removeCollection(raw)
                 else:
                     processedData = processData(df_raw, frequency)

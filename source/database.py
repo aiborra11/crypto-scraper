@@ -49,7 +49,7 @@ class Database(object):
             quit()
 
 
-    def getRawData(self, query={}):
+    def getRawData(self):
         """
         Shows a list of available collections we can find inside the selected database and asks to select the ones
         you are willing to collect.
@@ -68,26 +68,17 @@ class Database(object):
         Database.DATABASE = self.client[self.databaseName]
         print(f'There are {len(Database.DATABASE.list_collection_names())} available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Select the ones you are interested in, or write "all" if you want them all')
-        collections = str(input().lower())
+        collections = str(input()).lower()
         if collections == 'all':
-            print('We are preparing all available collections: ', collections)
+            print('We are preparing all available collections...')
             collections_date = list(sorted(Database.DATABASE.list_collection_names()))
-
-            raw_data = pd.DataFrame()
-            for c in collections_date:
-                raw_data = pd.concat([raw_data, pd.DataFrame(Database.DATABASE[c].find(query))])
-            return raw_data.to_csv(f'data/raw_{str(collections_date[0])}_{collections_date[-1]}.csv'), \
-                                                            list(sorted(Database.DATABASE.list_collection_names()))
+            return collections_date
 
 
         else:
             collections_date = sorted(collections.replace(',', '').replace("'", '').split(' '))
             print('We are preparing collections for: ', collections_date)
-
-            raw_data = pd.DataFrame()
-            for c in collections_date:
-                raw_data = pd.concat([raw_data, pd.DataFrame(Database.DATABASE[c].find(query))])
-            return raw_data.to_csv(f'data/raw_{str(collections_date[0])}_{collections_date[-1]}.csv'), collections_date
+            return collections_date
 
 
 
