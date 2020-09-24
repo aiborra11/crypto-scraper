@@ -49,7 +49,7 @@ class Database(object):
             quit()
 
 
-    def getRawData(self, query={}):
+    def getRawData(self):
         """
         Shows a list of available collections we can find inside the selected database and asks to select the ones
         you are willing to collect.
@@ -68,22 +68,18 @@ class Database(object):
         Database.DATABASE = self.client[self.databaseName]
         print(f'There are {len(Database.DATABASE.list_collection_names())} available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
         print('Select the ones you are interested in, or write "all" if you want them all')
-        collections = str(input().lower())
-
+        collections = str(input()).lower()
         if collections == 'all':
-            print('We are preparing all available collections: ', collections)
-            return list(sorted(Database.DATABASE.list_collection_names()))
-
-
-        elif len(collections) > 1:
-            collections_date = collections.replace(',', '').replace("'", '').split(' ')
-            print('We are preparing collections for: ', collections_date)
+            print('We are preparing all available collections...')
+            collections_date = list(sorted(Database.DATABASE.list_collection_names()))
             return collections_date
 
 
         else:
-            print('We are preparing your collection for: ', collections)
-            return pd.DataFrame(Database.DATABASE[collections].find(query)).set_index('timestamp')
+            collections_date = sorted(collections.replace(',', '').replace("'", '').split(' '))
+            print('We are preparing collections for: ', collections_date)
+            return collections_date
+
 
 
 
