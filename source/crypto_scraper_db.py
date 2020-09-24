@@ -24,6 +24,7 @@ def datetimeConverter(df):
     df['timestamp'] = df.timestamp.map(lambda t: datetime.strptime(t[:-3], '%Y-%m-%dD%H:%M:%S.%f'))
     return df
 
+
 def data_updator(interval):
     """
     Iterates through a list of dates scraping the data for the specified cryptocurrency.
