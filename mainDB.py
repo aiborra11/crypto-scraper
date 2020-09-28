@@ -71,8 +71,6 @@ if __name__ == "__main__":
         elif userChoice == 3:
             database = Database()
             rawData = database.getRawData()
-            print(rawData)
-            # print(f'You have {len(rawData)} collections in your Raw Data database.')
             print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
             frequency = str(input()).upper()
             for raw in tqdm(rawData):
@@ -84,10 +82,12 @@ if __name__ == "__main__":
                     processedData = processData(df_raw, frequency)
                     dataFrame = processedData.createDataFrame()
 
+
         elif userChoice == 4:
             database = Database()
             deletedColl = database.removeCollection()
             print(f'The collection has been removed successfully from the database.')
+
 
         elif userChoice == 5:
             dates = dates_converter('20141122')
