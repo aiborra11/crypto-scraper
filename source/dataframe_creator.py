@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
+
 from datetime import datetime
+from os import listdir
 
 
 class processData(object):
@@ -22,9 +24,9 @@ class processData(object):
 
         self.dataTotals = self.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size', 'ContractsTraded_grossValue'])
         self.dataTransact = self.counterGrouper(cols=['side'])
-        self.smoothedPx = self.emaSmoother(cols=['price'])
+        self.dataPx = self.emaSmoother(cols=['price'])
         self.px = self.ohcl(cols='price')
-        self.logReturns = self.percentageChange(col='price')
+        # self.logReturns = self.percentageChange(col='price')
 
 
     def duplicatesRemover(self):
@@ -42,11 +44,8 @@ class processData(object):
         """
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
-        # print(f'{len(self.df) - len(self.noDuplicates)} rows have been deleted since they were duplicated')
-        # self.noDuplicates = self.battle.reset_index()
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
             lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
-        # self.battle.set_index('timestamp', inplace=True)
         return self.noDuplicates
 
 
@@ -114,28 +113,10 @@ class processData(object):
             Dataframe with the sum of the desired columns based on the selected frequency.
 
         """
-        # try:
         self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols]
                                                                 .sum()).shift(1, freq=self.frequency)
         return self.dataSum
-        # except:
-        #     self.battle = self.battle.reset_index()
-        #     self.battle['timestamp'] = self.battle['timestamp'].map(lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
-        #     self.battle.set_index('timestamp', inplace=True)
-        # #     self.battle = self.battle.reset_index()
-        # #     for num, val in enumerate(self.battle['timestamp']):
-        # #         self.battle['timestamp'] = str(val).replace(' ', 'D')
-        # #
-        # # # self.battle = self.battle.reset_index()
-        # # print(self.battle)
-        # # self.battle = self.battle.drop_duplicates(keep='first')
-        # # self.battle['timestamp'] = self.battle['timestamp'].map(lambda t: datetime.strptime(str(t)[:-3], '%Y-%m-%dD%H:%M:%S.%f')).set_index('timestamp')
-        # #
-        #     self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols]
-        #                                 .sum()).shift(1, freq=self.frequency)
-        #
-        #     print(self.dataSum)
-        #     return self.dataSum
+
 
     def counterGrouper(self, cols):
         """
@@ -189,29 +170,29 @@ class processData(object):
         for t in self.dataTransact['totalTransact'].values:
             exp_mov_avg = self.battle.ewm(span=t, adjust=False).mean()
 
-        self.smoothedPx = pd.DataFrame(exp_mov_avg.groupby(pd.Grouper(freq=self.frequency))[cols]
+        self.dataPx = pd.DataFrame(exp_mov_avg.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                 .mean()).shift(1, freq=self.frequency)
-        return self.smoothedPx
+        return self.dataPx
 
 
-    def percentageChange(self, col):
-        """
-        Logarithmic returns for the selected column
-
-        Arguments:
-        ----------
-        cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
-
-        Returns:
-        --------
-        {[DataFrame]}
-            Dataframe with the logarithmic returns for the selected column
-
-        """
-
-        # print('Calculating log returns...')
-        self.smoothedPx['pctChg'] = pd.DataFrame((np.log(1 + self.smoothedPx[col].pct_change()))).fillna(0)
-        return self.smoothedPx
+    # def percentageChange(self, col):
+    #     """
+    #     Logarithmic returns for the selected column
+    #
+    #     Arguments:
+    #     ----------
+    #     cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
+    #
+    #     Returns:
+    #     --------
+    #     {[DataFrame]}
+    #         Dataframe with the logarithmic returns for the selected column
+    #
+    #     """
+    #
+    #     # print('Calculating log returns...')
+    #     self.log_returns['pctChg'] = pd.DataFrame((np.log(1 + self.dataPx[col].pct_change()))).fillna(0)
+    #     return self.log_returns
 
 
 
@@ -232,20 +213,18 @@ class processData(object):
 
         # print('Calculating open, high, low and close values...')
 
-        self.smoothedPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+        self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .max()).shift(1, freq=self.frequency)
 
-        self.smoothedPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+        self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .min()).shift(1, freq=self.frequency)
 
-
-        self.smoothedPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+        self.dataPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .first()).shift(1, freq=self.frequency)
 
-        self.smoothedPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+        self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .nth(-1)).shift(1, freq=self.frequency)
-
-        return self.smoothedPx
+        return self.dataPx
 
 
     def createDataFrame(self):
@@ -264,11 +243,24 @@ class processData(object):
         """
 
         # print('Creating your dataframe...')
-        dataset = pd.concat([self.dataTotals, self.dataTransact, self.logReturns], axis=1)
-
-
-        dataset.columns = ['Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
+        dataset = pd.concat([self.dataTotals, self.dataTransact, self.dataPx], axis=1).reset_index()
+        dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                            'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close', 'LogReturns']
+                            'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close']
 
-        return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
+        # dataset_csv = dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
+
+        files = sorted(listdir('./data'))
+        if f'{self.frequency}_general.csv' not in files:
+            all_data = pd.DataFrame()
+            all_data = pd.concat([all_data, dataset])
+            all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            return all_data.to_csv(f'data/{self.frequency}_general.csv', index=False)
+
+        else:
+            all_data = pd.read_csv(f'data/{self.frequency}_general.csv')
+            all_data = pd.concat([all_data, dataset])
+            all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            return all_data.to_csv(f'data/{self.frequency}_general.csv', index=False)
+
+
