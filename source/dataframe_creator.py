@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from os import listdir
 
 
 class processData(object):
@@ -238,13 +239,11 @@ class processData(object):
         self.smoothedPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .min()).shift(1, freq=self.frequency)
 
-
         self.smoothedPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .first()).shift(1, freq=self.frequency)
 
         self.smoothedPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .nth(-1)).shift(1, freq=self.frequency)
-
         return self.smoothedPx
 
 
@@ -265,10 +264,15 @@ class processData(object):
 
         # print('Creating your dataframe...')
         dataset = pd.concat([self.dataTotals, self.dataTransact, self.logReturns], axis=1)
-
-
         dataset.columns = ['Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
                             'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close', 'LogReturns']
 
-        return dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
+        dataset_csv = dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
+
+        files = sorted(listdir('./data'))
+        all_data = pd.DataFrame()
+        for f in files:
+            all_data = pd.concat([all_data, pd.read_csv(f'./data/{f}')])
+
+        return all_data.to_csv(f'data/{self.frequency}_general.csv')

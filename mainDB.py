@@ -84,10 +84,12 @@ if __name__ == "__main__":
                     processedData = processData(df_raw, frequency)
                     dataFrame = processedData.createDataFrame()
 
+
         elif userChoice == 4:
             database = Database()
             deletedColl = database.removeCollection()
             print(f'The collection has been removed successfully from the database.')
+
 
         elif userChoice == 5:
             dates = dates_converter('20141122')
