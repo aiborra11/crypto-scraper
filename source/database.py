@@ -1,6 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-
+from os import listdir
 from pymongo import MongoClient
 
 
@@ -23,6 +23,7 @@ class Database(object):
 
         self.client = MongoClient('localhost', 27017)
         self.databaseName = str(self.selectDatabase())
+        self.availability = self.showAvailableData()
 
 
     def selectDatabase(self):
@@ -66,21 +67,7 @@ class Database(object):
         """
 
         Database.DATABASE = self.client[self.databaseName]
-        print(f'There are {len(Database.DATABASE.list_collection_names())} available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
-        print('Select the ones you are interested in, or write "all" if you want them all')
-        collections = str(input()).lower()
-        if collections == 'all':
-            print('We are preparing all available collections...')
-            collections_date = list(sorted(Database.DATABASE.list_collection_names()))
-            return collections_date
-
-
-        else:
-            collections_date = sorted(collections.replace(',', '').replace("'", '').split(' '))
-            print('We are preparing collections for: ', collections_date)
-            return collections_date
-
-
+        return self.availability
 
 
     def removeCollection(self, collection=''):
@@ -141,22 +128,35 @@ class Database(object):
         Database.DATABASE = self.client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
-        print("\nIf you'd like to collect all the available data, write: 'origin'.")
-        print("If you'd like to update since the last available record, write 'last'.")
-        print('To update from a specific period, write the date in this format: YYYYMMDD')
-        interval = str(input())
+
+        print(f'\nThere are {len(available_data)} available collections in your database.')
+        print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
+        print("If you'd like to update since the last recorded datapoint in your general csv file, write: 'UPDATE'.")
+        print("If you'd like to update since the last available record, write 'LAST'.")
+        print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
+
+        interval = str(input()).lower()
         if interval == 'last':
-            print('You have chosen last, so we will update since:', available_data[-1])
-            return [available_data][-1]
+            last_val = available_data[-1]
+            print('You have chosen LAST, so we will update since:', last_val)
+            to_update = [x for x in available_data if x >= last_val]
+            return sorted(to_update)
 
         elif interval == 'origin':
-            print(f'We are going to collect data since the very beginning.')
-            available_data = ['20141121', '20141122']
-            return available_data
+            print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning.')
+            to_update = [x for x in available_data if x >= '20141121']
+            return sorted(to_update)
 
         elif interval in available_data:
             print(f'The interval: {interval} is available')
             return [interval]
+
+        elif interval == 'update':
+            file = listdir('data/')[1]
+            all_data = pd.read_csv(f'data/{file}').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
+            print('You have chosen UPDATE, so we will update since:', all_data)
+            to_update = [x for x in available_data if x >= all_data]
+            return sorted(to_update)
 
         else:
             print('There is no data for this date')
