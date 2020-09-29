@@ -45,9 +45,9 @@ if __name__ == "__main__":
 
     while True:
         print('Enter 1 if you want to update your database:')
-        print('Enter 2 if you want to collect RAW data:')
-        print('Enter 3 if you want to collect PROCESSED data:')
-        print('Enter 4 if you want to delete a collection:')
+        print('Enter 2 if you want to collect RAW data as a csv file:')
+        print('Enter 3 if you want to collect PROCESSED data as a csv file:')
+        print('Enter 4 if you want to delete a collection from your database:')
         print('Enter 5 to check date warnings:')
         print('Enter 6 to exit:')
 
@@ -71,9 +71,14 @@ if __name__ == "__main__":
         elif userChoice == 3:
             database = Database()
             rawData = database.getRawData()
-            print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
-            frequency = str(input()).upper()
-            for raw in tqdm(rawData):
+            print(rawData[1])
+            if rawData[1] == '':
+                print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
+                frequency = str(input()).replace(' ', '')
+            else:
+                frequency = rawData[1]
+
+            for raw in tqdm(rawData[0]):
                 df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
                 if df_raw.empty:
                     print(f'There is no data for {raw}. Deleting this collection')
@@ -81,7 +86,7 @@ if __name__ == "__main__":
                 else:
                     processedData = processData(df_raw, frequency)
                     dataFrame = processedData.createDataFrame()
-
+            # csv_file = processedData.create_csv(dataFrame)
 
         elif userChoice == 4:
             database = Database()

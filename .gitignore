@@ -138,3 +138,8 @@ dmypy.json
 .idea
 .gz
 *.gz
+.ipynb
+*.ipynb
+data_1H
+data_4H
+data_15Min
