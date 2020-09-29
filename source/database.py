@@ -140,23 +140,26 @@ class Database(object):
             last_val = available_data[-1]
             print('You have chosen LAST, so we will update since:', last_val)
             to_update = [x for x in available_data if x >= last_val]
-            return sorted(to_update)
+            return sorted(to_update), ''
 
         elif interval == 'origin':
             print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning.')
             to_update = [x for x in available_data if x >= '20141121']
-            return sorted(to_update)
+            return sorted(to_update), ''
 
         elif interval in available_data:
             print(f'The interval: {interval} is available')
-            return [interval]
+            return [interval], ''
 
         elif interval == 'update':
-            file = listdir('data/')[1]
-            all_data = pd.read_csv(f'data/{file}').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
+            file = listdir('data/')
+            print('These are your existing csv files: ', file)
+            print("Which is the timeframe you'd like to update [XMin, XH, D, W, M...]")
+            frequency = str(input()).replace(' ', '')
+            all_data = pd.read_csv(f'data/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
             print('You have chosen UPDATE, so we will update since:', all_data)
             to_update = [x for x in available_data if x >= all_data]
-            return sorted(to_update)
+            return sorted(to_update), frequency
 
         else:
             print('There is no data for this date')

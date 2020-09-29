@@ -256,11 +256,17 @@ class processData(object):
             all_data = pd.concat([all_data, dataset])
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
             return all_data.to_csv(f'data/{self.frequency}_general.csv', index=False)
+            # return all_data
 
         else:
             all_data = pd.read_csv(f'data/{self.frequency}_general.csv')
             all_data = pd.concat([all_data, dataset])
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
             return all_data.to_csv(f'data/{self.frequency}_general.csv', index=False)
+            # return all_data
 
 
+
+
+    # def create_csv(self, dataframe):
+    #     return dataframe.to_csv(f'data/{self.frequency}_general.csv', index=False)
