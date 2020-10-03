@@ -22,7 +22,9 @@ class processData(object):
 
         self.frequency = frequency
 
-        self.dataTotals = self.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size', 'ContractsTraded_grossValue'])
+        self.dataTotals = self.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
+                                                'ContractsTraded_grossValue'])
+
         self.dataTransact = self.counterGrouper(cols=['side'])
         self.dataPx = self.emaSmoother(cols=['price'])
         self.px = self.ohcl(cols='price')
