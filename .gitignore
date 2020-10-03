@@ -143,3 +143,6 @@ dmypy.json
 data_1H
 data_4H
 data_15Min
+.icloud
+*.icloud
+
