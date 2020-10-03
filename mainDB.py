@@ -44,7 +44,7 @@ if __name__ == "__main__":
     """
 
     while True:
-        print('Enter 1 if you want to update your database:')
+        print('\nEnter 1 if you want to update your database:')
         print('Enter 2 if you want to collect RAW data as a csv file:')
         print('Enter 3 if you want to collect PROCESSED data as a csv file:')
         print('Enter 4 if you want to delete a collection from your database:')
@@ -55,17 +55,21 @@ if __name__ == "__main__":
 
         if userChoice == 1:
             database = Database()
-            update_from = database.showAvailableData()[-1]
+            # print(database)
+            update_from = database.showAvailableData()[0]
             main(day_update=update_from)
 
 
         elif userChoice == 2:
+            # database = Database()
+            # rawData = database.getRawData()
             database = Database()
-            rawData = database.getRawData()
+            rawData = database.showAvailableData()[0]
+            # rawData = update_from.getRawData()
             for raw in tqdm(rawData):
                 df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
                 print('Preparing your RAW data for: ', raw)
-                df_raw.to_csv(f'data/RAW_{raw}.csv')
+                df_raw.to_csv(f'data/RAW_{raw}.gz', compression='gzip')
 
 
         elif userChoice == 3:

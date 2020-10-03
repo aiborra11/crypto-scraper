@@ -43,7 +43,7 @@ def data_updator(interval):
 
 
     print('Interval to be scrapped:', interval[:-1])
-    cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{interval[-2]}.csv.gz')
+    cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{str(interval[-2])}.csv.gz')
 
     print('\n\nChoose from the list below the cryptocurrency pair you are interested:\n', cryptos['symbol'].unique())
     crypto = str(input()).upper()

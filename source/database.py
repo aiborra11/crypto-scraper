@@ -23,7 +23,7 @@ class Database(object):
 
         self.client = MongoClient('localhost', 27017)
         self.databaseName = str(self.selectDatabase())
-        self.availability = self.showAvailableData()
+        # self.availability = self.showAvailableData()
 
 
     def selectDatabase(self):
@@ -50,25 +50,25 @@ class Database(object):
             quit()
 
 
-    def getRawData(self):
-        """
-        Shows a list of available collections we can find inside the selected database and asks to select the ones
-        you are willing to collect.
-
-        Arguments:
-        ----------
-        query {[str]} -- Any filter you are willing to apply. By default it brings all the data inside the collection.
-
-        Returns:
-        --------
-            {[DataFrame]}
-                Containing all the scraped and stored data for the selected dates and cryptocurrency.
-
-        """
-
-        Database.DATABASE = self.client[self.databaseName]
-        return self.availability
-
+    # def getRawData(self):
+    #     """
+    #     Shows a list of available collections we can find inside the selected database and asks to select the ones
+    #     you are willing to collect.
+    #
+    #     Arguments:
+    #     ----------
+    #     query {[str]} -- Any filter you are willing to apply. By default it brings all the data inside the collection.
+    #
+    #     Returns:
+    #     --------
+    #         {[DataFrame]}
+    #             Containing all the scraped and stored data for the selected dates and cryptocurrency.
+    #
+    #     """
+    #
+    #     Database.DATABASE = self.client[self.databaseName]
+    #     # return self.availability
+    #     return None
 
     def removeCollection(self, collection=''):
         """
@@ -134,6 +134,7 @@ class Database(object):
         print("If you'd like to update since the last recorded datapoint in your general csv file, write: 'UPDATE'.")
         print("If you'd like to update since the last available record, write 'LAST'.")
         print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
+        print("To update only a CONCRETE period, write CONCRETE.")
 
         interval = str(input()).lower()
         if interval == 'last':
@@ -147,19 +148,46 @@ class Database(object):
             to_update = [x for x in available_data if x >= '20141121']
             return sorted(to_update), ''
 
+        elif interval == 'concrete':
+            print('Write the period you want to collect in the following format: "YYYYMMDD" ')
+            interval = str(input())
+            if interval in available_data:
+                print(f'The interval: {interval} is available')
+                return [interval], ''
+            else:
+                print('Sorry but we do not have this collection in our database.')
+
         elif interval in available_data:
             print(f'The interval: {interval} is available')
-            return [interval], ''
+            to_update = [x for x in available_data if x >= interval]
+            return sorted(to_update), ''
 
         elif interval == 'update':
             file = listdir('data/')
-            print('These are your existing csv files: ', file)
-            print("Which is the timeframe you'd like to update [XMin, XH, D, W, M...]")
-            frequency = str(input()).replace(' ', '')
-            all_data = pd.read_csv(f'data/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
-            print('You have chosen UPDATE, so we will update since:', all_data)
-            to_update = [x for x in available_data if x >= all_data]
-            return sorted(to_update), frequency
+            datatypes=[]
+            for f in file:
+                if f not in datatypes:
+                    datatypes.append(f.split('_')[0].replace('.', '').replace('readmetxt', '').replace('DS', ''))
+            print('These are your existing timeframes/datatype files: ', set(datatypes))
+            print("Which is the timeframe/datatype you'd like to update [XMin, XH, D, W, M, RAW...]")
+
+            frequency = str(input()).replace(' ', '').upper()
+            if frequency != 'RAW':
+                try:
+                    all_data = pd.read_csv(f'data/{frequency}_general.csv').timestamp.iloc[-1].split(' ')[0].replace('-', '')
+                    print('You have chosen UPDATE, so we will update since:', all_data)
+                    to_update = [x for x in available_data if x >= all_data]
+                    return sorted(to_update), frequency
+                except:
+                    all_data = pd.read_csv(f'data/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
+                    print('You have chosen UPDATE, so we will update since:', all_data)
+                    to_update = [x for x in available_data if x >= all_data]
+                    return sorted(to_update), frequency
+            else:
+                raws = [f.replace('RAW_', '').replace('.csv', '') for f in file if f.startswith('RAW_')]
+                print('You have chosen UPDATE, so we will update since:', sorted(raws)[-1])
+                to_update = [x for x in available_data if x >= sorted(raws)[-1]]
+                return sorted(to_update), frequency
 
         else:
             print('There is no data for this date')
