@@ -18,8 +18,9 @@ def dates_converter(day1='20141122'):               # 20141122 is the first avai
 
     """
 
+
     dates = []
-    date_format = datetime.strptime(day1, '%Y%m%d')
+    date_format = datetime.strptime(day1[0], '%Y%m%d')
     max_date = int(datetime.today().strftime('%Y%m%d'))
 
     for day in range(2500):
