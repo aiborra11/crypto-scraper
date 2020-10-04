@@ -61,11 +61,8 @@ if __name__ == "__main__":
 
 
         elif userChoice == 2:
-            # database = Database()
-            # rawData = database.getRawData()
             database = Database()
             rawData = database.showAvailableData()[0]
-            # rawData = update_from.getRawData()
             for raw in tqdm(rawData):
                 df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
                 print('Preparing your RAW data for: ', raw)
@@ -74,8 +71,8 @@ if __name__ == "__main__":
 
         elif userChoice == 3:
             database = Database()
-            rawData = database.getRawData()
-            print(rawData[1])
+            rawData = database.showAvailableData()
+            print(rawData)
             if rawData[1] == '':
                 print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
                 frequency = str(input()).replace(' ', '')
