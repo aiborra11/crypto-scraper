@@ -23,7 +23,6 @@ class Database(object):
 
         self.client = MongoClient('localhost', 27017)
         self.databaseName = str(self.selectDatabase())
-        # self.availability = self.showAvailableData()
 
 
     def selectDatabase(self):
@@ -49,26 +48,6 @@ class Database(object):
             print(f'Sorry, we do not have a database named: {self.databaseName}. Restart the DB and try again.', )
             quit()
 
-
-    # def getRawData(self):
-    #     """
-    #     Shows a list of available collections we can find inside the selected database and asks to select the ones
-    #     you are willing to collect.
-    #
-    #     Arguments:
-    #     ----------
-    #     query {[str]} -- Any filter you are willing to apply. By default it brings all the data inside the collection.
-    #
-    #     Returns:
-    #     --------
-    #         {[DataFrame]}
-    #             Containing all the scraped and stored data for the selected dates and cryptocurrency.
-    #
-    #     """
-    #
-    #     Database.DATABASE = self.client[self.databaseName]
-    #     # return self.availability
-    #     return None
 
     def removeCollection(self, collection=''):
         """
@@ -130,16 +109,17 @@ class Database(object):
         print('Available data: ', available_data)
 
         print(f'\nThere are {len(available_data)} available collections in your database.')
+
         print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
-        print("If you'd like to update since the last recorded datapoint in your general csv file, write: 'UPDATE'.")
-        print("If you'd like to update since the last available record, write 'LAST'.")
+        print("If you'd like to update your general csv file, write: 'UPDATE'.")
+        print("If you'd like to update since the last available record in the database, write 'LAST'.")
         print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
-        print("To update only a CONCRETE period, write CONCRETE.")
+        print("To update ONLY a CONCRETE period, write: CONCRETE.")
 
         interval = str(input()).lower()
         if interval == 'last':
             last_val = available_data[-1]
-            print('You have chosen LAST, so we will update since:', last_val)
+            print('You have chosen LAST, so we will update your general csv file since:', last_val)
             to_update = [x for x in available_data if x >= last_val]
             return sorted(to_update), ''
 
