@@ -130,16 +130,17 @@ class Database(object):
         print('Available data: ', available_data)
 
         print(f'\nThere are {len(available_data)} available collections in your database.')
+
         print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
-        print("If you'd like to update since the last recorded datapoint in your general csv file, write: 'UPDATE'.")
-        print("If you'd like to update since the last available record, write 'LAST'.")
+        print("If you'd like to update your general csv file, write: 'UPDATE'.")
+        print("If you'd like to update since the last available record in the database, write 'LAST'.")
         print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
-        print("To update only a CONCRETE period, write CONCRETE.")
+        print("To update ONLY a CONCRETE period, write: CONCRETE.")
 
         interval = str(input()).lower()
         if interval == 'last':
             last_val = available_data[-1]
-            print('You have chosen LAST, so we will update since:', last_val)
+            print('You have chosen LAST, so we will update your general csv file since:', last_val)
             to_update = [x for x in available_data if x >= last_val]
             return sorted(to_update), ''
 
