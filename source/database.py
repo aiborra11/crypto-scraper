@@ -23,7 +23,6 @@ class Database(object):
 
         self.client = MongoClient('localhost', 27017)
         self.databaseName = str(self.selectDatabase())
-        # self.availability = self.showAvailableData()
 
 
     def selectDatabase(self):
@@ -49,26 +48,6 @@ class Database(object):
             print(f'Sorry, we do not have a database named: {self.databaseName}. Restart the DB and try again.', )
             quit()
 
-
-    # def getRawData(self):
-    #     """
-    #     Shows a list of available collections we can find inside the selected database and asks to select the ones
-    #     you are willing to collect.
-    #
-    #     Arguments:
-    #     ----------
-    #     query {[str]} -- Any filter you are willing to apply. By default it brings all the data inside the collection.
-    #
-    #     Returns:
-    #     --------
-    #         {[DataFrame]}
-    #             Containing all the scraped and stored data for the selected dates and cryptocurrency.
-    #
-    #     """
-    #
-    #     Database.DATABASE = self.client[self.databaseName]
-    #     # return self.availability
-    #     return None
 
     def removeCollection(self, collection=''):
         """
