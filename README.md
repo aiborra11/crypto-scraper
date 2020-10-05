@@ -1,8 +1,11 @@
 # Crypto Scraper
-**The scope of this project was to develop a script that eases the collection of data for a specific cryptocurrency.**
+**The scope of this project is to develop a script that eases the collection and data processing for a desired cryptocurrency.**
 
-_It allows us to to automatically extract raw data coming from the order book, process it and obtain features that will allow us to understand the behaviour of this cryptocurrency._
- 
+_It allows us to to automatically extract raw data coming from Binance's Order Book, process it and convert it into the desired timeframe (5min, 15min, 1H, 4H, 1D, 1W, etc.)._
+
+_Hence, using this data we will be able to analyse, understand, forecast, etc., the behaviour of the desired crypto (or at least try 🤔)._
+
+
 ### Scrapped Raw Data
 
 |   | timestamp                     | symbol | side | size | price  | tickDirection | trdMatchID                           | grossValue | homeNotional       | foreignNotional |
@@ -17,11 +20,11 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 `symbol:` Which is the contract belonging to this row.
 
-`side`: Sell (short) vs Buy (long) position.
+`side:` Sell (short) vs Buy (long) position.
 
-`size`: Amount of contracts traded.
+`size:` Amount of contracts traded.
 
-`price:`  price at which the transaction was succeeded.
+`price:` Price at which the transaction was succeeded.
 
 `tickDirection:` "MinusTick":  The trade happened at a lower price than the previous one. "PlusTick" : This trade happened at a higher price than the previous one. "ZeroPlusTick" : The previous trade was PLUSTICK and this one has a price equal or lower than the previous one. "ZeroMinusTick" : The previous trade was MINUSTICK and this one has a price equal or higher than the previous one.
 
@@ -42,7 +45,7 @@ _It allows us to to automatically extract raw data coming from the order book, p
 | 2018-08-09 12:00:00 |  314733664 |  4981585266840 |     49815.9 | 3.14734e+08 |           -1.61104e+06 |                 -2.70579e+10 |           35096 |           33561 |          -1535 |            68657 |     6312.82 |  0.00166856  | 6352   | 6273.5 | 6316   |  6320   |
 | 2018-08-09 16:00:00 | 1403867727 | 22065437110463 |    220654   | 1.40387e+09 |            2.75257e+07 |                  3.95259e+11 |          106490 |          110371 |           3881 |           216861 |     6314.68 |  0.000293317 | 6550   | 6182   | 6320   |  6493.5 |
  
-`Timestamp:` Timerange the data is grouped and when.
+`Timestamp:` Interval the data is grouped into and the timeframe it belongs.
 
 `Size`: Amount of contracts traded during the selected frequency (absolute terms).
 
@@ -79,18 +82,18 @@ _It allows us to to automatically extract raw data coming from the order book, p
 
 
 ### Notes
-Depending on the crypto, there might be a lot of data to collect, remember is data from the order book. Therefore, the script will need time and you might run into memory issues stopping the script. 
+Depending on the crypto, there might be a lot of data to collect (remember is data from the order book). Therefore, the script will need time and you might run into memory issues that will stop the script. 
 
-Feel free to reach me in case you need some help.
+Feel free to reach me in case you need some help. 💬
 
  
 ### Files
 
 **data:** Where the collected/processed data will be stored. You will save one .csv file per date in the desired frequency. The path should be in the previous location from the script.
 
-**source:** Folder containing the magic. 
+**source:** Folder containing the scripts. 
 
-**mainCSV:** Executable script to collect all the data from the orderbook starting at a specific date. We will carry on with some feature engineering and store it into a csv compressed as gzip file. When executing, we will only need to specify the cryptocurrency we are interested in (Bitcoin by default) and the date (by default is the first available.). 
+**mainCSV:** Executable script to collect all the data from the orderbook starting at a specific date. We will carry on with some feature engineering and store it into a csv compressed as gzip file. When executing, we will only need to select the cryptocurrency we are interested and the date (by default is the first available.). 
 
 **mainDB:** Executable script to collect all **raw** data from the orderbook starting at a specific date and automatically store it in a mongoDB (in my case I named it "xbt". When executing, we will only need to follow the steps according to our intentions: 
     
@@ -101,7 +104,10 @@ Feel free to reach me in case you need some help.
     5. Check warnings (empty files.).
 
 
-### Part II
+### Part II (WIP) 🌱
+Here I am using the collected data to serve as input for different AI and Statistical approaches that help me to reach a more accurate forecast of the next movement the cryptocurrency will perform. 📈📉
+
+
 https://github.com/aiborra11/BTC-Manipulations
 
 ********
