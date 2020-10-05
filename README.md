@@ -82,7 +82,7 @@ _Hence, using this data we will be able to analyse, understand, forecast, etc., 
 
 
 ### Notes
-Depending on the crypto, there might be a lot of data to collect (remember is data from the order book). Therefore, the script will need time and you might run into memory issues that will stop the script. 
+Depending on the crypto, there might be a lot of data to collect (remember is data from the order book and it might need millions of rows to register all transactions taking place during a trading day). Therefore, the script will need time and you might run into memory issues that will stop the script. 
 
 Feel free to reach me in case you need some help. 💬
 
