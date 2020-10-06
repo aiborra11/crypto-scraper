@@ -1,7 +1,7 @@
 # Crypto Scraper
 **The scope of this project is to develop a script that eases the collection and data processing for a desired cryptocurrency.**
 
-_It allows us to to automatically extract raw data coming from Binance's Order Book, process it and convert it into the desired timeframe (5min, 15min, 1H, 4H, 1D, 1W, etc.)._
+_It allows us to to automatically extract raw data coming from the Bitmex Order Book, process it and convert it into the desired timeframe (5min, 15min, 1H, 4H, 1D, 1W, etc.)._
 
 _Hence, using this data we will be able to analyse, understand, forecast, etc., the behaviour of the desired crypto (or at least try 🤔)._
 
