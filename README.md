@@ -67,7 +67,7 @@ _Hence, using this data we will be able to analyse, understand, forecast, etc., 
 
 `TotalTransacts`: Total number of transactions done during the period (absolute terms.).
 
-`Price_exp`: Price smoothed with an exponential moving average of 'i' periods.
+`Price_exp`: Price smoothed with an exponential moving average of 'i' periods. * Now is not active since it takes a lot of time to be executed on tick data.
 
 `LogReturns`: Logarithmic returns from one period to another.
 
@@ -75,7 +75,7 @@ _Hence, using this data we will be able to analyse, understand, forecast, etc., 
 
 `Low`: Lowest price reached within the period. 
 
-`Open`: Opening price for the selected period. 
+`Open`: Opening price for the selected period. s
 
 `Close`: Closing price for the selected period. 
 

@@ -49,7 +49,7 @@ def csv_creator(df, crypto, name):
 
     """
 
-    return df.to_csv(f'./data/{crypto}_{name}.gz', index=True, compression='gzip')
+    return df.to_csv(f'./data.nosync/{crypto}_{name}.gz', index=True, compression='gzip')
 
 
 def data_obtainer(interval, crypto, name):

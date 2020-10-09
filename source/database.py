@@ -89,7 +89,6 @@ class Database(object):
                 Database.DATABASE[collections].drop()
 
 
-
     def showAvailableData(self):
         """
         Shows a list of available collections we can find inside the selected database and asks if we are interested
@@ -143,7 +142,7 @@ class Database(object):
             return sorted(to_update), ''
 
         elif interval == 'update':
-            file = listdir('data/')
+            file = listdir('data.nosync/')
             datatypes=[]
             for f in file:
                 if f not in datatypes:
@@ -151,15 +150,15 @@ class Database(object):
             print('These are your existing timeframes/datatype files: ', set(datatypes))
             print("Which is the timeframe/datatype you'd like to update [XMin, XH, D, W, M, RAW...]")
 
-            frequency = str(input()).replace(' ', '').upper()
+            frequency = str(input()).replace(' ', '')
             if frequency != 'RAW':
                 try:
-                    all_data = pd.read_csv(f'data/{frequency}_general.csv').timestamp.iloc[-1].split(' ')[0].replace('-', '')
+                    all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').timestamp.iloc[-1].split(' ')[0].replace('-', '')
                     print('You have chosen UPDATE, so we will update since:', all_data)
                     to_update = [x for x in available_data if x >= all_data]
                     return sorted(to_update), frequency
                 except:
-                    all_data = pd.read_csv(f'data/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
+                    all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
                     print('You have chosen UPDATE, so we will update since:', all_data)
                     to_update = [x for x in available_data if x >= all_data]
                     return sorted(to_update), frequency
@@ -196,7 +195,6 @@ class Database(object):
             print(f'Your new collection {date}, has been created successfully')
         except:
             print(f'There is no available data for the date: ', date)
-
 
 
     def datesDoubleCheck (self, scraped_interval):
