@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
-
 from datetime import datetime
 from os import listdir
+import timeit
+
+
 
 
 class processData(object):
@@ -22,14 +24,6 @@ class processData(object):
 
         self.frequency = frequency
 
-        self.dataTotals = self.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
-                                                'ContractsTraded_grossValue'])
-
-        self.dataTransact = self.counterGrouper(cols=['side'])
-        self.dataPx = self.emaSmoother(cols=['price'])
-        self.px = self.ohcl(cols='price')
-        # self.logReturns = self.percentageChange(col='price')
-
 
     def duplicatesRemover(self):
         """
@@ -46,6 +40,7 @@ class processData(object):
         """
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
+
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
             lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
         return self.noDuplicates
@@ -197,7 +192,6 @@ class processData(object):
     #     return self.log_returns
 
 
-
     def ohcl(self, cols):
         """
         Finds the max and lows for the selected frequency.
@@ -214,6 +208,7 @@ class processData(object):
         """
 
         # print('Calculating open, high, low and close values...')
+        self.dataPx = self.dataTransact
 
         self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .max()).shift(1, freq=self.frequency)
@@ -229,7 +224,7 @@ class processData(object):
         return self.dataPx
 
 
-    def createDataFrame(self):
+    def createDataFrame(self, dataTotals, dataPx):
         """
         Creates a dataframe with all the previos functions executed and added as a column.
 
@@ -245,30 +240,43 @@ class processData(object):
         """
 
         # print('Creating your dataframe...')
-        dataset = pd.concat([self.dataTotals, self.dataTransact, self.dataPx], axis=1).reset_index()
+        dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
+
         dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                             'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                            'TotalTransacts', 'Price_exp', 'High', 'Low', 'Open', 'Close']
+                            'TotalTransacts', 'High', 'Low', 'Open', 'Close'] #'Price_exp',
 
-        # dataset_csv = dataset.to_csv(f'data/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
+        # dataset_csv = dataset.to_csv(f'data.nosync/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
 
-        files = sorted(listdir('./data'))
-        if f'{self.frequency}_general.csv' not in files:
-            all_data = pd.DataFrame()
-            all_data = pd.concat([all_data, dataset])
-            all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
-            return all_data.to_csv(f'data/{self.frequency}_general.csv', index=False)
-            # return all_data
+        files = sorted(listdir('data.nosync/'))
+        exist_df = [f for f in files if f.startswith(f'{self.frequency}_')]
+        if exist_df:
+            print('Continuing from previous df')
+            print(dataset.head(2))
+            print(dataset.tail(2))
+            all_data = pd.read_csv(f'data.nosync/{self.frequency}_general.csv')
+            final = pd.concat([all_data, dataset])
+            final['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            return final.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
 
         else:
-            all_data = pd.read_csv(f'data/{self.frequency}_general.csv')
+            print(f'Starting new df for {self.frequency} data.')
+            all_data = pd.DataFrame()
+            print(dataset.head(2))
+            print(dataset.tail(2))
             all_data = pd.concat([all_data, dataset])
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
-            return all_data.to_csv(f'data/{self.frequency}_general.csv', index=False)
-            # return all_data
+            return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
 
 
+def get_data(df_raw, frequency):
+    processedData = processData(df_raw, frequency)
+
+    dataTotals = processedData.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
+                                                'ContractsTraded_grossValue'])
+    processedData.counterGrouper(cols=['side'])
+    dataPx = processedData.ohcl(cols='price')
+
+    return processedData.createDataFrame(dataTotals, dataPx)
 
 
-    # def create_csv(self, dataframe):
-    #     return dataframe.to_csv(f'data/{self.frequency}_general.csv', index=False)

@@ -2,7 +2,8 @@ from source.crypto_scraper_db import data_updator
 from source.crypto_scraper_csv import dates_converter
 
 from source.database import Database
-from source.dataframe_creator import processData
+from source.dataframe_creator import get_data
+
 
 from tqdm import tqdm
 import pandas as pd
@@ -66,7 +67,7 @@ if __name__ == "__main__":
             for raw in tqdm(rawData):
                 df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
                 print('Preparing your RAW data for: ', raw)
-                df_raw.to_csv(f'data/RAW_{raw}.gz', compression='gzip')
+                df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
 
 
         elif userChoice == 3:
@@ -85,8 +86,8 @@ if __name__ == "__main__":
                     print(f'There is no data for {raw}. Deleting this collection')
                     database.removeCollection(raw)
                 else:
-                    processedData = processData(df_raw, frequency)
-                    dataFrame = processedData.createDataFrame()
+                    get_data(df_raw, frequency)
+
             # csv_file = processedData.create_csv(dataFrame)
 
         elif userChoice == 4:
