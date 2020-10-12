@@ -49,16 +49,18 @@ if __name__ == "__main__":
         print('Enter 2 if you want to collect RAW data as a csv file:')
         print('Enter 3 if you want to collect PROCESSED data as a csv file:')
         print('Enter 4 if you want to delete a collection from your database:')
-        print('Enter 5 to check date warnings:')
-        print('Enter 6 to exit:')
+        print('Enter 5 if you want to check the current available collections in your database:')
+        print('Enter 6 to check date warnings:')
+        print('Enter 7 to exit:')
 
         userChoice = int(input())
 
         if userChoice == 1:
             database = Database()
             # print(database)
-            update_from = database.showAvailableData()[0]
-            main(day_update=update_from)
+            available_data = database.currentData()
+            # update_from = database.showAvailableData()[0]
+            main(day_update=available_data[-1])
 
 
         elif userChoice == 2:
@@ -95,15 +97,18 @@ if __name__ == "__main__":
             deletedColl = database.removeCollection()
             print(f'The collection has been removed successfully from the database.')
 
-
         elif userChoice == 5:
+            database = Database()
+            currData = database.currentData()
+
+        elif userChoice == 6:
             dates = dates_converter('20141122')
             database = Database()
             warnings = database.datesDoubleCheck(dates)
             print('You should double-check the data for these dates: ', warnings)
 
 
-        elif userChoice == 6:
+        elif userChoice == 7:
             print('Goodbye!')
             quit()
 

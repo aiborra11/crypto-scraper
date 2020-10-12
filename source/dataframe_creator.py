@@ -269,6 +269,20 @@ class processData(object):
 
 
 def get_data(df_raw, frequency):
+    """
+    Main to execute all previous functions
+
+    Arguments:
+    ----------
+        df_raw {[DataFrame]} -- Initial dataframe containing the raw data.
+        frequency {[str]} -- Desired frequency you'd like to receive the final data.
+
+    Returns:
+    --------
+    {[csv]}
+        Dataframe stored in your data folder with features to work on.
+
+    """
     processedData = processData(df_raw, frequency)
 
     dataTotals = processedData.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',

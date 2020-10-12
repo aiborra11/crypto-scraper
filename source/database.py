@@ -89,6 +89,15 @@ class Database(object):
                 Database.DATABASE[collections].drop()
 
 
+
+    def currentData(self):
+        Database.DATABASE = self.client[self.databaseName]
+        available_data = sorted(Database.DATABASE.list_collection_names())
+        print('Your current collections available inside the database are: ', available_data)
+        print('The last updated collection is: ', available_data[-1])
+        return available_data
+
+
     def showAvailableData(self):
         """
         Shows a list of available collections we can find inside the selected database and asks if we are interested
@@ -196,7 +205,7 @@ class Database(object):
         except:
             print(f'There is no available data for the date: ', date)
 
-
+    # 553 - 20190408
     def datesDoubleCheck (self, scraped_interval):
         """
         Checks for empty collections.
@@ -230,4 +239,63 @@ class DatabaseUpdator(Database):
     def __init__(self):
         pass
 
+
+
+    def updateDB(self):
+        """
+        Shows a list of available collections we can find inside the selected database and asks if we are interested
+        in updating our database with new data.
+
+        Arguments:
+        ----------
+        ()
+        Returns:
+        --------
+            Collections we are willing to include into our database.
+
+        """
+
+        Database.DATABASE = self.client[self.databaseName]
+        available_data = sorted(Database.DATABASE.list_collection_names())
+        print('Available data: ', available_data)
+
+        print(f'\nThere are {len(available_data)} available collections in your database.')
+
+        print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
+        print("If you'd like to update your general csv file, write: 'UPDATE'.")
+        print("If you'd like to update since the last available record in the database, write 'LAST'.")
+        print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
+        print("To update ONLY a CONCRETE period, write: CONCRETE.")
+
+        interval = str(input()).lower()
+        if interval == 'last':
+            last_val = available_data[-1]
+            print('You have chosen LAST, so we will update your general csv file since:', last_val)
+            to_update = [x for x in available_data if x >= last_val]
+            return sorted(to_update), ''
+
+        elif interval == 'origin':
+            print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning.')
+            to_update = [x for x in available_data if x >= '20141121']
+            return sorted(to_update), ''
+
+        elif interval == 'concrete':
+            print('Write the period you want to collect in the following format: "YYYYMMDD" ')
+            interval = str(input())
+            if interval in available_data:
+                print(f'The interval: {interval} is available')
+                return [interval], ''
+            else:
+                print('Sorry but we do not have this collection in our database.')
+
+        elif interval in available_data:
+            print(f'The interval: {interval} is available')
+            to_update = [x for x in available_data if x >= interval]
+            return sorted(to_update), ''
+
+        elif interval == 'update':
+            return available_data[-1], ''
+
+        else:
+            print('There is no data for this date')
 
