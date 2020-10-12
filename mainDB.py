@@ -45,10 +45,10 @@ if __name__ == "__main__":
     """
 
     while True:
-        print('\nEnter 1 if you want to update your database:')
+        print('\nEnter 1 if you want to update/create your database:')
         print('Enter 2 if you want to collect RAW data as a csv file:')
         print('Enter 3 if you want to collect PROCESSED data as a csv file:')
-        print('Enter 4 if you want to delete a collection from your database:')
+        print('Enter 4 if you want to DELETE a collection from your database:')
         print('Enter 5 if you want to check the current available collections in your database:')
         print('Enter 6 to check date warnings:')
         print('Enter 7 to exit:')

@@ -39,15 +39,26 @@ class Database(object):
 
         """
 
-        print(f'Available databases: {sorted(self.client.list_database_names())}.')
+        print(f'Available databases: {sorted(self.client.list_database_names())}. You can create a new one by writing a different name from the listed ones.')
         print('Please, write the one you are interested in:')
         self.databaseName = str(input())
         if self.databaseName in self.client.list_database_names():
             return self.databaseName
         else:
-            print(f'Sorry, we do not have a database named: {self.databaseName}. Restart the DB and try again.', )
-            quit()
+            print(f'Sorry, we do not have any database named: {self.databaseName}. Write "yes" if you would like to create a new one named {self.databaseName}. Otherwise, restart the DB and try again.', )
+            new_db = str(input()).lower()
+            if new_db == 'yes':
+                print('Write the starting date using the format "YYYYMMDD": ')
+                collection_one = str(int(input())-1)
+                connection = self.client
+                new_collection = connection[self.databaseName].create_collection(str(collection_one))
 
+                print(f' databases: {sorted(self.client.list_database_names())}.')
+                print(self.databaseName)
+                return self.databaseName
+
+            else:
+                quit()
 
     def removeCollection(self, collection=''):
         """
@@ -92,7 +103,7 @@ class Database(object):
 
     def currentData(self):
         Database.DATABASE = self.client[self.databaseName]
-        available_data = sorted(Database.DATABASE.list_collection_names())
+        available_data = sorted(self.client[self.databaseName].list_collection_names())
         print('Your current collections available inside the database are: ', available_data)
         print('The last updated collection is: ', available_data[-1])
         return available_data
@@ -205,7 +216,7 @@ class Database(object):
         except:
             print(f'There is no available data for the date: ', date)
 
-    # 553 - 20190408
+    # 553 - 20190408   -- 20190425 / 20190428   -- 8
     def datesDoubleCheck (self, scraped_interval):
         """
         Checks for empty collections.
@@ -297,5 +308,4 @@ class DatabaseUpdator(Database):
             return available_data[-1], ''
 
         else:
-            print('There is no data for this date')
-
+            print('There is no data for this database')
