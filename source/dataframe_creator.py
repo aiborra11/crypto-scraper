@@ -219,7 +219,9 @@ class processData(object):
                                                                             .first()).shift(1, freq=self.frequency)
 
         self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .nth(-1)).shift(1, freq=self.frequency)
+                                                                            .nth(-1)).shift(1, freq=self.frequency)\
+                                                                            .ffill(axis=0)
+
         return self.dataPx
 
 
@@ -269,6 +271,20 @@ class processData(object):
 
 
 def get_data(df_raw, frequency):
+    """
+    Main to execute all previous functions
+
+    Arguments:
+    ----------
+        df_raw {[DataFrame]} -- Initial dataframe containing the raw data.
+        frequency {[str]} -- Desired frequency you'd like to receive the final data.
+
+    Returns:
+    --------
+    {[csv]}
+        Dataframe stored in your data folder with features to work on.
+
+    """
     processedData = processData(df_raw, frequency)
 
     dataTotals = processedData.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
