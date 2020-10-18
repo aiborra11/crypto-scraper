@@ -219,7 +219,9 @@ class processData(object):
                                                                             .first()).shift(1, freq=self.frequency)
 
         self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .nth(-1)).shift(1, freq=self.frequency)
+                                                                            .nth(-1)).shift(1, freq=self.frequency)\
+                                                                            .ffill(axis=0)
+
         return self.dataPx
 
 

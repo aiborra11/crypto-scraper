@@ -57,7 +57,6 @@ if __name__ == "__main__":
 
         if userChoice == 1:
             database = Database()
-            # print(database)
             available_data = database.currentData()
             # update_from = database.showAvailableData()[0]
             main(day_update=available_data[-1])

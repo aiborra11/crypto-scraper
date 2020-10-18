@@ -216,7 +216,7 @@ class Database(object):
         except:
             print(f'There is no available data for the date: ', date)
 
-    # 553 - 20190408   -- 20190425 / 20190428   -- 8
+
     def datesDoubleCheck (self, scraped_interval):
         """
         Checks for empty collections.
@@ -231,7 +231,7 @@ class Database(object):
                 With collection names we should double check.
 
         """
-
+        # '20200226', '20200227', '20200228', '20200229', '20200301', '20200302', '20200303
         print('We are collecting empty datasets, wait a moment....')
         Database.DATABASE = self.client[self.databaseName]
         double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
