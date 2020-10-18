@@ -39,15 +39,26 @@ class Database(object):
 
         """
 
-        print(f'Available databases: {sorted(self.client.list_database_names())}.')
+        print(f'Available databases: {sorted(self.client.list_database_names())}. You can create a new one by writing a different name from the listed ones.')
         print('Please, write the one you are interested in:')
         self.databaseName = str(input())
         if self.databaseName in self.client.list_database_names():
             return self.databaseName
         else:
-            print(f'Sorry, we do not have a database named: {self.databaseName}. Restart the DB and try again.', )
-            quit()
+            print(f'Sorry, we do not have any database named: {self.databaseName}. Write "yes" if you would like to create a new one named {self.databaseName}. Otherwise, restart the DB and try again.', )
+            new_db = str(input()).lower()
+            if new_db == 'yes':
+                print('Write the starting date using the format "YYYYMMDD": ')
+                collection_one = str(int(input())-1)
+                connection = self.client
+                new_collection = connection[self.databaseName].create_collection(str(collection_one))
 
+                print(f' databases: {sorted(self.client.list_database_names())}.')
+                print(self.databaseName)
+                return self.databaseName
+
+            else:
+                quit()
 
     def removeCollection(self, collection=''):
         """
@@ -87,6 +98,15 @@ class Database(object):
             else:
                 print("We are deleting the collection you've selected: ", collections)
                 Database.DATABASE[collections].drop()
+
+
+
+    def currentData(self):
+        Database.DATABASE = self.client[self.databaseName]
+        available_data = sorted(self.client[self.databaseName].list_collection_names())
+        print('Your current collections available inside the database are: ', available_data)
+        print('The last updated collection is: ', available_data[-1])
+        return available_data
 
 
     def showAvailableData(self):
@@ -211,7 +231,7 @@ class Database(object):
                 With collection names we should double check.
 
         """
-
+        # '20200226', '20200227', '20200228', '20200229', '20200301', '20200302', '20200303
         print('We are collecting empty datasets, wait a moment....')
         Database.DATABASE = self.client[self.databaseName]
         double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
@@ -231,3 +251,61 @@ class DatabaseUpdator(Database):
         pass
 
 
+
+    def updateDB(self):
+        """
+        Shows a list of available collections we can find inside the selected database and asks if we are interested
+        in updating our database with new data.
+
+        Arguments:
+        ----------
+        ()
+        Returns:
+        --------
+            Collections we are willing to include into our database.
+
+        """
+
+        Database.DATABASE = self.client[self.databaseName]
+        available_data = sorted(Database.DATABASE.list_collection_names())
+        print('Available data: ', available_data)
+
+        print(f'\nThere are {len(available_data)} available collections in your database.')
+
+        print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
+        print("If you'd like to update your general csv file, write: 'UPDATE'.")
+        print("If you'd like to update since the last available record in the database, write 'LAST'.")
+        print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
+        print("To update ONLY a CONCRETE period, write: CONCRETE.")
+
+        interval = str(input()).lower()
+        if interval == 'last':
+            last_val = available_data[-1]
+            print('You have chosen LAST, so we will update your general csv file since:', last_val)
+            to_update = [x for x in available_data if x >= last_val]
+            return sorted(to_update), ''
+
+        elif interval == 'origin':
+            print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning.')
+            to_update = [x for x in available_data if x >= '20141121']
+            return sorted(to_update), ''
+
+        elif interval == 'concrete':
+            print('Write the period you want to collect in the following format: "YYYYMMDD" ')
+            interval = str(input())
+            if interval in available_data:
+                print(f'The interval: {interval} is available')
+                return [interval], ''
+            else:
+                print('Sorry but we do not have this collection in our database.')
+
+        elif interval in available_data:
+            print(f'The interval: {interval} is available')
+            to_update = [x for x in available_data if x >= interval]
+            return sorted(to_update), ''
+
+        elif interval == 'update':
+            return available_data[-1], ''
+
+        else:
+            print('There is no data for this database')

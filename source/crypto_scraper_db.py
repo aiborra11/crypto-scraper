@@ -52,6 +52,8 @@ def data_updator(interval):
         print(f'{date} is being processed...')
         dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
         crypto_data = dataset[dataset['symbol'] == crypto]
-        crypto_data_indexed = datetimeConverter(crypto_data)
+        # crypto_data_indexed = datetimeConverter(crypto_data)
 
-        DatabaseUpdator.updateDatabase(str(date), crypto_data_indexed)
+        # DatabaseUpdator.updateDatabase(str(date), crypto_data_indexed)
+
+        DatabaseUpdator.updateDatabase(str(date), crypto_data)
