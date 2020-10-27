@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
+import math
 from datetime import datetime
 from os import listdir
+# from imports import *
 
 
 
@@ -22,6 +24,9 @@ class processData(object):
         self.battle = self.bullsVsBears(['size', 'grossValue'])
 
         self.frequency = frequency
+
+        # if self.frequency == '1min':
+        #     self.volatility_func = self.volatility_calculator()
 
 
     def duplicatesRemover(self):
@@ -139,7 +144,8 @@ class processData(object):
                                                                         .count()).unstack('side')
         transactions.columns = transactions.columns.droplevel()
         self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'}) \
-                                                                            .shift(1, freq=self.frequency)
+                                                                            .shift(1, freq=self.frequency)\
+                                                                                                      .ffill(axis=0)
 
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
@@ -210,13 +216,16 @@ class processData(object):
         self.dataPx = self.dataTransact
 
         self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .max()).shift(1, freq=self.frequency)
+                                                                            .max()).shift(1, freq=self.frequency)\
+                                                                            .ffill(axis=0)
 
         self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .min()).shift(1, freq=self.frequency)
+                                                                            .min()).shift(1, freq=self.frequency)\
+                                                                            .ffill(axis=0)
 
         self.dataPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .first()).shift(1, freq=self.frequency)
+                                                                            .first()).shift(1, freq=self.frequency) \
+                                                                            .ffill(axis=0)
 
         self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .nth(-1)).shift(1, freq=self.frequency)\
@@ -225,7 +234,57 @@ class processData(object):
         return self.dataPx
 
 
-    def createDataFrame(self, dataTotals, dataPx):
+    def volatility_calculator(self):
+        """
+        Calculates the volatility using the logarithmic percentage change taken from measurements taken the crypto
+        spot price every minute.
+
+            -- Formula:
+
+                Volatility = Stdev(Ln(P1/P0), Ln(P2/P1), ..., Ln(P10080/P10079))* Sqrt(10080)
+
+        Arguments:
+        ----------
+        frame {[int]} -- Frame we want to get the data. Daily = 1440, Weekly = 10080
+
+        Returns:
+        --------
+        {[DataFrame]}
+            Dataframe including the volatility of the cryptocurrency.
+
+        """
+        prices = pd.DataFrame(self.dataPx).rename(columns={0: 'Close'})
+        prices['Close'] = prices['Close'].ffill()
+        prices['LagClose'] = prices['Close'].shift(1)
+        print(prices)
+        volatility = ((np.log(prices['LagClose'] / prices['Close'])).std() * math.sqrt(1440))
+        print('aaaa//', volatility)
+        return volatility
+
+
+    # def volatility_executor(self, dataTotals, dataPx):
+    #     if self.frequency == '1min':
+    #         volatility = self.dataPx.rolling(1440, min_periods=1440).apply(volatility_calculator)
+    #         print(volatility)
+    #         self.dataPx['Volatility'] = volatility
+    #
+    #         print(self.dataPx)
+    #
+    #         dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
+    #         dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
+    #                            'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
+    #                            'TotalTransacts', 'High', 'Low', 'Open', 'Close', 'Volatility']  # 'Price_exp',
+    #         return dataset
+    #
+    #     else:
+    #         print('No volatility for this timeframe')
+    #
+    #         return None
+
+
+
+
+    def createDataFrame(self, dataset):
         """
         Creates a dataframe with all the previos functions executed and added as a column.
 
@@ -240,13 +299,7 @@ class processData(object):
 
         """
 
-        # print('Creating your dataframe...')
-        dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
-
-        dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
-                            'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                            'TotalTransacts', 'High', 'Low', 'Open', 'Close'] #'Price_exp',
-
+        print('Creating your dataframe...')
         # dataset_csv = dataset.to_csv(f'data.nosync/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
 
         files = sorted(listdir('data.nosync/'))
@@ -259,6 +312,9 @@ class processData(object):
             final = pd.concat([all_data, dataset])
             final['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
             return final.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
+            print('final', all_data)
+
+            return None
 
         else:
             print(f'Starting new df for {self.frequency} data.')
@@ -267,7 +323,12 @@ class processData(object):
             print(dataset.tail(2))
             all_data = pd.concat([all_data, dataset])
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
-            return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
+            # return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
+            print('final', all_data)
+            return None
+
+
+
 
 
 def get_data(df_raw, frequency):
@@ -292,6 +353,18 @@ def get_data(df_raw, frequency):
     processedData.counterGrouper(cols=['side'])
     dataPx = processedData.ohcl(cols='price')
 
-    return processedData.createDataFrame(dataTotals, dataPx)
+    dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
+    dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
+                       'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
+                       'TotalTransacts', 'High', 'Low', 'Open', 'Close']  # 'Price_exp',
+
+    if frequency == '2min':
+        # all_data = pd.read_csv(f'data.nosync/1min_generalaa.csv')
+        dataset['Volatility'] = all_data.rolling(1440, min_periods=1440).apply(processedData.volatility_calculator())
+        print('--~', dataset)
+        return processedData.createDataFrame(dataset)
+
+    else:
+        return processedData.createDataFrame(dataset)
 
 

@@ -74,7 +74,7 @@ if __name__ == "__main__":
         elif userChoice == 3:
             database = Database()
             rawData = database.showAvailableData()
-            print(rawData)
+            # print(rawData)
             if rawData[1] == '':
                 print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
                 frequency = str(input()).replace(' ', '')
