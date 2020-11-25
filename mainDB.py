@@ -4,7 +4,6 @@ from source.crypto_scraper_csv import dates_converter
 from source.database import Database
 from source.dataframe_creator import get_data
 
-
 from tqdm import tqdm
 import pandas as pd
 

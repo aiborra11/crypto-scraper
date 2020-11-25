@@ -1,11 +1,8 @@
 import pandas as pd
 import numpy as np
-import math
+
 from datetime import datetime
 from os import listdir
-# from imports import *
-
-
 
 
 class processData(object):
@@ -24,9 +21,6 @@ class processData(object):
         self.battle = self.bullsVsBears(['size', 'grossValue'])
 
         self.frequency = frequency
-
-        # if self.frequency == '1min':
-        #     self.volatility_func = self.volatility_calculator()
 
 
     def duplicatesRemover(self):
@@ -114,8 +108,7 @@ class processData(object):
             Dataframe with the sum of the desired columns based on the selected frequency.
 
         """
-        self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols]
-                                                                .sum()).shift(1, freq=self.frequency)
+        self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols].sum())
         return self.dataSum
 
 
@@ -143,9 +136,7 @@ class processData(object):
                                                          self.battle['side'] == 'Buy'])[cols]
                                                                         .count()).unstack('side')
         transactions.columns = transactions.columns.droplevel()
-        self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'}) \
-                                                                            .shift(1, freq=self.frequency)\
-                                                                                                      .ffill(axis=0)
+        self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'}).ffill(axis=0)
 
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
@@ -173,28 +164,28 @@ class processData(object):
             exp_mov_avg = self.battle.ewm(span=t, adjust=False).mean()
 
         self.dataPx = pd.DataFrame(exp_mov_avg.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                .mean()).shift(1, freq=self.frequency)
+                                                                .mean())
         return self.dataPx
 
 
-    # def percentageChange(self, col):
-    #     """
-    #     Logarithmic returns for the selected column
-    #
-    #     Arguments:
-    #     ----------
-    #     cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
-    #
-    #     Returns:
-    #     --------
-    #     {[DataFrame]}
-    #         Dataframe with the logarithmic returns for the selected column
-    #
-    #     """
-    #
-    #     # print('Calculating log returns...')
-    #     self.log_returns['pctChg'] = pd.DataFrame((np.log(1 + self.dataPx[col].pct_change()))).fillna(0)
-    #     return self.log_returns
+    def percentageChange(self, col):
+        """
+        Logarithmic returns for the selected column
+
+        Arguments:
+        ----------
+        cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
+
+        Returns:
+        --------
+        {[DataFrame]}
+            Dataframe with the logarithmic returns for the selected column
+
+        """
+
+        # print('Calculating log returns...')
+        self.log_returns['pctChg'] = pd.DataFrame((np.log(1 + self.dataPx[col].pct_change()))).fillna(0)
+        return self.log_returns
 
 
     def ohcl(self, cols):
@@ -216,72 +207,17 @@ class processData(object):
         self.dataPx = self.dataTransact
 
         self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .max()).shift(1, freq=self.frequency)\
-                                                                            .ffill(axis=0)
+                                                                            .max()).ffill(axis=0)
 
         self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .min()).shift(1, freq=self.frequency)\
-                                                                            .ffill(axis=0)
+                                                                            .min()).ffill(axis=0)
 
         self.dataPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .first()).shift(1, freq=self.frequency) \
-                                                                            .ffill(axis=0)
+                                                                            .first()).ffill(axis=0)
 
         self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .nth(-1)).shift(1, freq=self.frequency)\
-                                                                            .ffill(axis=0)
-
+                                                                            .nth(-1)).ffill(axis=0)
         return self.dataPx
-
-
-    def volatility_calculator(self):
-        """
-        Calculates the volatility using the logarithmic percentage change taken from measurements taken the crypto
-        spot price every minute.
-
-            -- Formula:
-
-                Volatility = Stdev(Ln(P1/P0), Ln(P2/P1), ..., Ln(P10080/P10079))* Sqrt(10080)
-
-        Arguments:
-        ----------
-        frame {[int]} -- Frame we want to get the data. Daily = 1440, Weekly = 10080
-
-        Returns:
-        --------
-        {[DataFrame]}
-            Dataframe including the volatility of the cryptocurrency.
-
-        """
-        prices = pd.DataFrame(self.dataPx).rename(columns={0: 'Close'})
-        prices['Close'] = prices['Close'].ffill()
-        prices['LagClose'] = prices['Close'].shift(1)
-        print(prices)
-        volatility = ((np.log(prices['LagClose'] / prices['Close'])).std() * math.sqrt(1440))
-        print('aaaa//', volatility)
-        return volatility
-
-
-    # def volatility_executor(self, dataTotals, dataPx):
-    #     if self.frequency == '1min':
-    #         volatility = self.dataPx.rolling(1440, min_periods=1440).apply(volatility_calculator)
-    #         print(volatility)
-    #         self.dataPx['Volatility'] = volatility
-    #
-    #         print(self.dataPx)
-    #
-    #         dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
-    #         dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
-    #                            'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-    #                            'TotalTransacts', 'High', 'Low', 'Open', 'Close', 'Volatility']  # 'Price_exp',
-    #         return dataset
-    #
-    #     else:
-    #         print('No volatility for this timeframe')
-    #
-    #         return None
-
-
 
 
     def createDataFrame(self, dataset):
@@ -358,13 +294,7 @@ def get_data(df_raw, frequency):
                        'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
                        'TotalTransacts', 'High', 'Low', 'Open', 'Close']  # 'Price_exp',
 
-    if frequency == '2min':
-        # all_data = pd.read_csv(f'data.nosync/1min_generalaa.csv')
-        dataset['Volatility'] = all_data.rolling(1440, min_periods=1440).apply(processedData.volatility_calculator())
-        print('--~', dataset)
-        return processedData.createDataFrame(dataset)
 
-    else:
-        return processedData.createDataFrame(dataset)
+    return processedData.createDataFrame(dataset)
 
 
