@@ -48,12 +48,22 @@ class Database(object):
             print(f'Sorry, we do not have any database named: {self.databaseName}. Write "yes" if you would like to create a new one named {self.databaseName}. Otherwise, restart the DB and try again.', )
             new_db = str(input()).lower()
             if new_db == 'yes':
-                last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', ''))-1
-                print('Creating your database since:', last_val)
-                connection = self.client
-                new_collection = connection[self.databaseName].create_collection(str(last_val))
-                print(f'Current Databases: {sorted(self.client.list_database_names())}.')
-                return self.databaseName
+                try:
+                    print("We've detected an existing csv file, so we are going to update it since its last value.")
+                    last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', ''))-1
+                    print('Creating your database since:', last_val)
+                    connection = self.client
+                    new_collection = connection[self.databaseName].create_collection(str(last_val))
+                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    return self.databaseName
+                except:
+                    print("We could not detect any existing csv file, so we are going to create a new one from scratch.")
+                    last_val = 20141121
+                    print('Creating your database since:', last_val)
+                    connection = self.client
+                    new_collection = connection[self.databaseName].create_collection(str(last_val))
+                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    return self.databaseName
 
             else:
                 quit()

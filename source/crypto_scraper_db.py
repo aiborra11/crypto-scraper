@@ -43,17 +43,26 @@ def data_updator(interval):
 
 
     print('Interval to be scrapped:', interval[:-1])
-    cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{str(interval[-2])}.csv.gz')
+    cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{str(interval[-2])}.csv.gz')
+
+    # cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{str(interval[-2])}.csv.gz')
 
     print('\n\nChoose from the list below the cryptocurrency pair you are interested:\n', cryptos['symbol'].unique())
     crypto = str(input()).upper()
 
     for date in tqdm(interval[:-1]):
         print(f'{date} is being processed...')
-        dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
-        crypto_data = dataset[dataset['symbol'] == crypto]
+
+        # dataset = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public.bitmex.com/data/trade/{date}.csv.gz')
+        try:
+            dataset = pd.read_csv(
+                f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
+            crypto_data = dataset[dataset['symbol'] == crypto]
+            DatabaseUpdator.updateDatabase(str(date), crypto_data)
+        except:
+            print(f'No available data for {crypto} at this date.')
         # crypto_data_indexed = datetimeConverter(crypto_data)
 
         # DatabaseUpdator.updateDatabase(str(date), crypto_data_indexed)
 
-        DatabaseUpdator.updateDatabase(str(date), crypto_data)
+

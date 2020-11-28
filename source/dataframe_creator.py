@@ -136,7 +136,7 @@ class processData(object):
                                                          self.battle['side'] == 'Buy'])[cols]
                                                                         .count()).unstack('side')
         transactions.columns = transactions.columns.droplevel()
-        self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'}).ffill(axis=0)
+        self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'})
 
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
@@ -206,17 +206,19 @@ class processData(object):
         # print('Calculating open, high, low and close values...')
         self.dataPx = self.dataTransact
 
-        self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .max()).ffill(axis=0)
-
-        self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .min()).ffill(axis=0)
-
-        self.dataPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .first()).ffill(axis=0)
-
         self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .nth(-1)).ffill(axis=0)
+
+        self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .max()).fillna(self.dataPx['Close'])
+
+
+        self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .min()).fillna(self.dataPx['Close'])
+
+        self.dataPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
+                                                                            .first()).fillna(self.dataPx['Close'])
+
         return self.dataPx
 
 
@@ -259,9 +261,9 @@ class processData(object):
             print(dataset.tail(2))
             all_data = pd.concat([all_data, dataset])
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
-            # return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
+            return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
             print('final', all_data)
-            return None
+            # return None
 
 
 
@@ -285,8 +287,8 @@ def get_data(df_raw, frequency):
     processedData = processData(df_raw, frequency)
 
     dataTotals = processedData.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
-                                                'ContractsTraded_grossValue'])
-    processedData.counterGrouper(cols=['side'])
+                                                'ContractsTraded_grossValue']).fillna(0)
+    processedData.counterGrouper(cols=['side']).fillna(0)
     dataPx = processedData.ohcl(cols='price')
 
     dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
