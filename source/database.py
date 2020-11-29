@@ -218,6 +218,7 @@ class Database(object):
         """
 
         available_data = available_data.to_dict(orient='records')
+        # print(available_data)
         try:
             Database.DATABASE[date].insert_many(available_data)
             print(f'Your new collection {date}, has been created successfully')

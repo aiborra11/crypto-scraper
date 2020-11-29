@@ -1,4 +1,5 @@
 import pandas as pd
+import gc
 
 from tqdm import tqdm
 from datetime import datetime
@@ -62,6 +63,9 @@ def data_updator(interval):
         except:
             print(f'No available data for {crypto} at this date.')
         # crypto_data_indexed = datetimeConverter(crypto_data)
+        # gc.collect()
+        # gc.set_threshold(1000, 15, 15)
+        # print('-->2~, ', gc.get_count())
 
         # DatabaseUpdator.updateDatabase(str(date), crypto_data_indexed)
 

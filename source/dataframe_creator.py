@@ -212,7 +212,6 @@ class processData(object):
         self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .max()).fillna(self.dataPx['Close'])
 
-
         self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
                                                                             .min()).fillna(self.dataPx['Close'])
 
@@ -244,26 +243,24 @@ class processData(object):
         exist_df = [f for f in files if f.startswith(f'{self.frequency}_')]
         if exist_df:
             print('Continuing from previous df')
-            print(dataset.head(2))
-            print(dataset.tail(2))
+            # print(dataset.head(2))
+            # print(dataset.tail(2))
             all_data = pd.read_csv(f'data.nosync/{self.frequency}_general.csv')
             final = pd.concat([all_data, dataset])
             final['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            print(f'Your dataframe has {len(all_data)} rows in total.')
             return final.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
-            print('final', all_data)
 
-            return None
 
         else:
             print(f'Starting new df for {self.frequency} data.')
             all_data = pd.DataFrame()
-            print(dataset.head(2))
-            print(dataset.tail(2))
+            # print(dataset.head(2))
+            # print(dataset.tail(2))
             all_data = pd.concat([all_data, dataset])
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            print(f'Your dataframe has {len(all_data)} rows in total.')
             return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
-            print('final', all_data)
-            # return None
 
 
 
@@ -294,7 +291,7 @@ def get_data(df_raw, frequency):
     dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
     dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                        'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                       'TotalTransacts', 'High', 'Low', 'Open', 'Close']  # 'Price_exp',
+                       'TotalTransacts', 'High', 'Low', 'Open', 'Close']
 
 
     return processedData.createDataFrame(dataset)

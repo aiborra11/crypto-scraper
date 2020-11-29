@@ -6,11 +6,14 @@ from source.dataframe_creator import get_data
 
 from tqdm import tqdm
 import pandas as pd
+import gc
+
+
+# 20190303
 
 
 
-
-def main(day_update):
+def main(day_update, max_date):
     """
     Pipeline to execute the functions from the source.crypto_scraper_db and source.crypto_scraper_csv script.
 
@@ -28,7 +31,7 @@ def main(day_update):
 
 
     print('Preparing your data...')
-    dates = dates_converter(day_update)
+    dates = dates_converter(day_update, max_date)
 
     print('Charging data to update...')
     data_updator(dates)
@@ -56,9 +59,23 @@ if __name__ == "__main__":
 
         if userChoice == 1:
             database = Database()
-            available_data = database.currentData()
-            # update_from = database.showAvailableData()[0]
-            main(day_update=available_data[-1])
+            print('Write "yes" to update since your last record or write a date in a format "YYMMDD" to update since there.')
+            print('In case you want to update until a certain date, write until')
+
+            update_since = str(input())
+            if update_since == 'yes':
+                available_data = database.currentData()
+                # update_from = database.showAvailableData()[0]
+                main(day_update=available_data[-1], max_date='')
+
+            elif update_since == 'until':
+                print('Write the date until the one you would like to update your db (YYMMDD): ')
+                update_until = str(input())
+                available_data = database.currentData()
+                main(day_update=20141128, max_date=int(update_until))
+
+            else:
+                main(day_update=update_since, max_date='')
 
 
         elif userChoice == 2:
@@ -73,7 +90,6 @@ if __name__ == "__main__":
         elif userChoice == 3:
             database = Database()
             rawData = database.showAvailableData()
-            # print(rawData)
             if rawData[1] == '':
                 print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
                 frequency = str(input()).replace(' ', '')
@@ -88,7 +104,6 @@ if __name__ == "__main__":
                 else:
                     get_data(df_raw, frequency)
 
-            # csv_file = processedData.create_csv(dataFrame)
 
         elif userChoice == 4:
             database = Database()
@@ -109,7 +124,6 @@ if __name__ == "__main__":
         elif userChoice == 7:
             print('Goodbye!')
             quit()
-
 
         else:
             print("\n\nOops! That is not a valid number. Please try a number between 1-6 to proceed:\n")
