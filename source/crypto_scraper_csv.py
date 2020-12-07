@@ -1,8 +1,9 @@
 import pandas as pd
+
 from datetime import datetime, timedelta
 
 
-def dates_converter(day1='20141122'):               # 20141122 is the first available date provided in the website
+def dates_converter(day1='20141122', max_date=''):               # 20141122 is the first available date provided in the website
     """
     Taking the first available date (if anything else is specified when calling the function) and converts it
     into dateformat to add one day and iterate every csv file in the website.
@@ -19,17 +20,26 @@ def dates_converter(day1='20141122'):               # 20141122 is the first avai
     """
 
     dates = []
-    date_format = datetime.strptime(day1, '%Y%m%d')
-    max_date = int(datetime.today().strftime('%Y%m%d'))
+    date_format = datetime.strptime(str(day1), '%Y%m%d')
+    if max_date:
+        for day in range(2500):
+            next_day = str(date_format + timedelta(days=day))
+            next_day_format = next_day.replace('-', '').split()[0]
 
-    for day in range(2500):
-        next_day = str(date_format + timedelta(days=day))
-        next_day_format = next_day.replace('-', '').split()[0]
+            if int(next_day_format) <= max_date:
+                dates.append(next_day_format)
 
-        if int(next_day_format) <= max_date:
-            dates.append(next_day_format)
+        return dates
+    else:
+        max_date = int(datetime.today().strftime('%Y%m%d'))
+        for day in range(2500):
+            next_day = str(date_format + timedelta(days=day))
+            next_day_format = next_day.replace('-', '').split()[0]
 
-    return dates
+            if int(next_day_format) <= max_date:
+                dates.append(next_day_format)
+
+        return dates
 
 
 def csv_creator(df, crypto, name):
