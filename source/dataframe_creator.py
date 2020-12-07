@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
+
 from datetime import datetime
 from os import listdir
-
-
 
 
 class processData(object):
@@ -11,11 +10,14 @@ class processData(object):
     Converts raw data into a determined frequency and creates new features as columns.
 
     """
+
+
     def __init__(self, df, frequency):
         """
         Allowing different functions to inherit from each other.
 
         """
+
         self.df = df
         self.noDuplicates = self.duplicatesRemover()
         self.dataClean = self.dataCleaner(['', 'symbol', 'trdMatchID'])
@@ -37,11 +39,12 @@ class processData(object):
             Dataframe with no duplicated transactions.
 
         """
+
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
-
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
             lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
+
         return self.noDuplicates
 
 
@@ -64,6 +67,7 @@ class processData(object):
         self.dataClean = self.noDuplicates[[col for col in self.noDuplicates.columns if col not in columns_delete]] \
             .rename(columns={'foreignNotional': 'usdTotal',
                                 'homeNotional': 'btcTotal'})
+
         return self.dataClean.set_index('timestamp')
 
 
@@ -89,6 +93,7 @@ class processData(object):
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
+
         return self.dataClean
 
 
@@ -110,7 +115,7 @@ class processData(object):
 
         """
         self.dataSum = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency)])[cols]
-                                                                .sum()).shift(1, freq=self.frequency)
+                                                                            .sum()).shift(1, freq=self.frequency)
         return self.dataSum
 
 
@@ -136,13 +141,15 @@ class processData(object):
         # print('Calculating the total number of transactions...')
         transactions = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency),
                                                          self.battle['side'] == 'Buy'])[cols]
-                                                                        .count()).unstack('side')
-        transactions.columns = transactions.columns.droplevel()
-        self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'}) \
-                                                                            .shift(1, freq=self.frequency)
+                                                                        .count()).unstack('side').shift(1, freq=self.frequency)
 
+        transactions.columns = transactions.columns.droplevel()
+        self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'})
+        self.dataTransact[['bearTransact', 'bullTransact']] = self.dataTransact[['bearTransact',
+                                                                                 'bullTransact']].fillna(0)
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
+
         return self.dataTransact
 
 
@@ -166,32 +173,34 @@ class processData(object):
         for t in self.dataTransact['totalTransact'].values:
             exp_mov_avg = self.battle.ewm(span=t, adjust=False).mean()
 
-        self.dataPx = pd.DataFrame(exp_mov_avg.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                .mean()).shift(1, freq=self.frequency)
+        self.dataPx = pd.DataFrame(exp_mov_avg.groupby(pd.Grouper(freq=self.frequency))[cols].mean()).shift(1, freq=self.frequency)
+
         return self.dataPx
 
 
-    # def percentageChange(self, col):
-    #     """
-    #     Logarithmic returns for the selected column
-    #
-    #     Arguments:
-    #     ----------
-    #     cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
-    #
-    #     Returns:
-    #     --------
-    #     {[DataFrame]}
-    #         Dataframe with the logarithmic returns for the selected column
-    #
-    #     """
-    #
-    #     # print('Calculating log returns...')
-    #     self.log_returns['pctChg'] = pd.DataFrame((np.log(1 + self.dataPx[col].pct_change()))).fillna(0)
-    #     return self.log_returns
+    def percentageChange(self, col):
+        """
+        Logarithmic returns for the selected column
+
+        Arguments:
+        ----------
+        cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
+
+        Returns:
+        --------
+        {[DataFrame]}
+            Dataframe with the logarithmic returns for the selected column
+
+        """
+
+        # print('Calculating log returns...')
+        self.log_returns['pctChg'] = pd.DataFrame((np.log(1 + self.dataPx[col].pct_change()))).fillna(0)
+
+        return self.log_returns
 
 
-    def ohcl(self, cols):
+
+    def ohcl(self):
         """
         Finds the max and lows for the selected frequency.
 
@@ -208,24 +217,16 @@ class processData(object):
 
         # print('Calculating open, high, low and close values...')
         self.dataPx = self.dataTransact
-
-        self.dataPx['High'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .max()).shift(1, freq=self.frequency)
-
-        self.dataPx['Low'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .min()).shift(1, freq=self.frequency)
-
-        self.dataPx['Open'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .first()).shift(1, freq=self.frequency)
-
-        self.dataPx['Close'] = pd.DataFrame(self.dataClean.groupby(pd.Grouper(freq=self.frequency))[cols]
-                                                                            .nth(-1)).shift(1, freq=self.frequency)\
-                                                                            .ffill(axis=0)
-
+        self.dataPx[['Open', 'High', 'Low', 'Close']] = self.dataClean.groupby(pd.Grouper(freq=self.frequency))['price'].agg(
+                                                                                                Open="first",
+                                                                                                High="max",
+                                                                                                Low="min",
+                                                                                                Close="last"
+                                                                                        ).shift(1, freq=self.frequency)
         return self.dataPx
 
 
-    def createDataFrame(self, dataTotals, dataPx):
+    def createDataFrame(self, dataset):
         """
         Creates a dataframe with all the previos functions executed and added as a column.
 
@@ -240,34 +241,42 @@ class processData(object):
 
         """
 
-        # print('Creating your dataframe...')
-        dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
-
-        dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
-                            'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                            'TotalTransacts', 'High', 'Low', 'Open', 'Close'] #'Price_exp',
-
-        # dataset_csv = dataset.to_csv(f'data.nosync/{self.frequency}_{str(dataset.index[0]).split(" ")[0]}.csv')
-
+        print('Creating your dataframe...')
         files = sorted(listdir('data.nosync/'))
         exist_df = [f for f in files if f.startswith(f'{self.frequency}_')]
+
         if exist_df:
             print('Continuing from previous df')
-            print(dataset.head(2))
-            print(dataset.tail(2))
             all_data = pd.read_csv(f'data.nosync/{self.frequency}_general.csv')
+
             final = pd.concat([all_data, dataset])
-            final['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            final['Close'] = final['Close'].ffill()
+            final['LogReturns'] = pd.DataFrame((np.log(1 + final['Close'].pct_change()))).fillna(0)
+            final['High'] = final['High'].fillna(final.Close)
+            final['Low'] = final['Low'].fillna(final.Close)
+            final['Open'] = final['Open'].fillna(final.Close)
+            final = final.fillna(0)
+            print(f'Your dataframe has {len(all_data)} rows in total.')
+
             return final.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
+
 
         else:
             print(f'Starting new df for {self.frequency} data.')
             all_data = pd.DataFrame()
-            print(dataset.head(2))
-            print(dataset.tail(2))
             all_data = pd.concat([all_data, dataset])
+            all_data['Close'] = all_data['Close'].ffill()
             all_data['LogReturns'] = pd.DataFrame((np.log(1 + all_data['Close'].pct_change()))).fillna(0)
+            all_data['High'] = all_data['High'].fillna(all_data.Close)
+            all_data['Low'] = all_data['Low'].fillna(all_data.Close)
+            all_data['Open'] = all_data['Open'].fillna(all_data.Close)
+            all_data = all_data.fillna(0)
+            print(f'Your dataframe has {len(all_data)} rows in total.')
+
             return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
+
+
+
 
 
 def get_data(df_raw, frequency):
@@ -288,10 +297,15 @@ def get_data(df_raw, frequency):
     processedData = processData(df_raw, frequency)
 
     dataTotals = processedData.sumGrouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
-                                                'ContractsTraded_grossValue'])
-    processedData.counterGrouper(cols=['side'])
-    dataPx = processedData.ohcl(cols='price')
+                                                'ContractsTraded_grossValue']).fillna(0)
+    processedData.counterGrouper(cols=['side']).fillna(0)
+    dataPx = processedData.ohcl()
 
-    return processedData.createDataFrame(dataTotals, dataPx)
+    dataset = pd.concat([dataTotals, dataPx], axis=1).reset_index()
+    dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
+                       'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
+                       'TotalTransacts', 'High', 'Low', 'Open', 'Close']
+
+    return processedData.createDataFrame(dataset)
 
 

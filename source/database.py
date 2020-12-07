@@ -48,14 +48,22 @@ class Database(object):
             print(f'Sorry, we do not have any database named: {self.databaseName}. Write "yes" if you would like to create a new one named {self.databaseName}. Otherwise, restart the DB and try again.', )
             new_db = str(input()).lower()
             if new_db == 'yes':
-                print('Write the starting date using the format "YYYYMMDD": ')
-                collection_one = str(int(input())-1)
-                connection = self.client
-                new_collection = connection[self.databaseName].create_collection(str(collection_one))
-
-                print(f' databases: {sorted(self.client.list_database_names())}.')
-                print(self.databaseName)
-                return self.databaseName
+                try:
+                    print("We've detected an existing csv file, so we are going to update it since its last value.")
+                    last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', ''))-1
+                    print('Creating your database since:', last_val)
+                    connection = self.client
+                    new_collection = connection[self.databaseName].create_collection(str(last_val))
+                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    return self.databaseName
+                except:
+                    print("We could not detect any existing csv file, so we are going to create a new one from scratch.")
+                    last_val = 20141121
+                    print('Creating your database since:', last_val)
+                    connection = self.client
+                    new_collection = connection[self.databaseName].create_collection(str(last_val))
+                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    return self.databaseName
 
             else:
                 quit()
@@ -165,7 +173,7 @@ class Database(object):
             file = listdir('data.nosync/')
             datatypes=[]
             for f in file:
-                if f not in datatypes:
+                if f not in datatypes and f.endswith(".csv"):
                     datatypes.append(f.split('_')[0].replace('.', '').replace('readmetxt', '').replace('DS', ''))
             print('These are your existing timeframes/datatype files: ', set(datatypes))
             print("Which is the timeframe/datatype you'd like to update [XMin, XH, D, W, M, RAW...]")
@@ -210,6 +218,7 @@ class Database(object):
         """
 
         available_data = available_data.to_dict(orient='records')
+        # print(available_data)
         try:
             Database.DATABASE[date].insert_many(available_data)
             print(f'Your new collection {date}, has been created successfully')
@@ -231,7 +240,6 @@ class Database(object):
                 With collection names we should double check.
 
         """
-        # '20200226', '20200227', '20200228', '20200229', '20200301', '20200302', '20200303
         print('We are collecting empty datasets, wait a moment....')
         Database.DATABASE = self.client[self.databaseName]
         double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
