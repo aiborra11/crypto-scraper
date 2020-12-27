@@ -6,8 +6,8 @@ from pymongo import MongoClient
 
 class Database(object):
     """
-    Access to different databases where daily collections containing raw data from the orderbook for a specified
-    cryptocurrency (tick level) are stored.
+    Access to different databases where daily collections are stored containing tick data from the orderbook
+    and for a specified cryptocurrency.
 
     # Execute in your terminal: brew services restart mongodb-community
 
@@ -20,14 +20,12 @@ class Database(object):
         Connection to your localhost database and first function execution.
 
         """
+        self._client = MongoClient('localhost', 27017)
+        self.databaseName = str(self.select_database())
 
-        self.client = MongoClient('localhost', 27017)
-        self.databaseName = str(self.selectDatabase())
-
-
-    def selectDatabase(self):
+    def select_database(self):
         """
-        Shows a list of databases you can try to connect and asks to write the one you are interested.
+        Shows a list of your existing databases and allows you to create a new one in case you need it.
 
         Arguments:
         ----------
@@ -39,36 +37,47 @@ class Database(object):
 
         """
 
-        print(f'Available databases: {sorted(self.client.list_database_names())}. You can create a new one by writing a different name from the listed ones.')
+        print(f'Available databases: {sorted(self._client.list_database_names())}. '
+              f'You can create a new one by writing a different name from the listed ones.')
+
         print('Please, write the one you are interested in:')
         self.databaseName = str(input())
-        if self.databaseName in self.client.list_database_names():
+        if self.databaseName in self._client.list_database_names():
             return self.databaseName
+
         else:
-            print(f'Sorry, we do not have any database named: {self.databaseName}. Write "yes" if you would like to create a new one named {self.databaseName}. Otherwise, restart the DB and try again.', )
+            print(f'Sorry, we do not have any database named: {self.databaseName}. '
+                  f'Write "yes" if you would like to create a new one named {self.databaseName}. '
+                  f'Otherwise, restart the DB and try again.', )
+
             new_db = str(input()).lower()
             if new_db == 'yes':
                 try:
                     print("We've detected an existing csv file, so we are going to update it since its last value.")
-                    last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', ''))-1
+                    last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0]
+                                   .replace('-', ''))-1
+
                     print('Creating your database since:', last_val)
-                    connection = self.client
-                    new_collection = connection[self.databaseName].create_collection(str(last_val))
-                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    connection = self._client
+                    # new_collection = connection[self.databaseName].create_collection(str(last_val))
+                    connection[self.databaseName].create_collection(str(last_val))
+                    print(f'Current Databases: {sorted(self._client.list_database_names())}.')
                     return self.databaseName
+
                 except:
-                    print("We could not detect any existing csv file, so we are going to create a new one from scratch.")
+                    print("We couldn't detect any existing csv file, so we are going to create a new one from scratch.")
                     last_val = 20141121
                     print('Creating your database since:', last_val)
-                    connection = self.client
-                    new_collection = connection[self.databaseName].create_collection(str(last_val))
-                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    connection = self._client
+                    # new_collection = connection[self.databaseName].create_collection(str(last_val))
+                    connection[self.databaseName].create_collection(str(last_val))
+                    print(f'Current Databases: {sorted(self._client.list_database_names())}.')
                     return self.databaseName
 
             else:
                 quit()
 
-    def removeCollection(self, collection=''):
+    def remove_collection(self, collection=''):
         """
         Shows the available collections and asks to delete any collections we are no longer interested in storing
         into our database.
@@ -87,7 +96,7 @@ class Database(object):
             print(f'The database {collection} has been deleted successfully!')
 
         else:
-            Database.DATABASE = self.client[self.databaseName]
+            Database.DATABASE = self._client[self.databaseName]
             print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
             print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
             collections = str(input())
@@ -107,17 +116,14 @@ class Database(object):
                 print("We are deleting the collection you've selected: ", collections)
                 Database.DATABASE[collections].drop()
 
-
-
-    def currentData(self):
-        Database.DATABASE = self.client[self.databaseName]
-        available_data = sorted(self.client[self.databaseName].list_collection_names())
+    def current_data(self):
+        Database.DATABASE = self._client[self.databaseName]
+        available_data = sorted(self._client[self.databaseName].list_collection_names())
         print('Your current collections available inside the database are: ', available_data)
         print('The last updated collection is: ', available_data[-1])
         return available_data
 
-
-    def showAvailableData(self):
+    def show_available_data(self):
         """
         Shows a list of available collections we can find inside the selected database and asks if we are interested
         in updating our database with new data.
@@ -131,7 +137,7 @@ class Database(object):
 
         """
 
-        Database.DATABASE = self.client[self.databaseName]
+        Database.DATABASE = self._client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
 
@@ -171,7 +177,7 @@ class Database(object):
 
         elif interval == 'update':
             file = listdir('data.nosync/')
-            datatypes=[]
+            datatypes = []
             for f in file:
                 if f not in datatypes and f.endswith(".csv"):
                     datatypes.append(f.split('_')[0].replace('.', '').replace('readmetxt', '').replace('DS', ''))
@@ -181,12 +187,15 @@ class Database(object):
             frequency = str(input()).replace(' ', '')
             if frequency != 'RAW':
                 try:
-                    all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').timestamp.iloc[-1].split(' ')[0].replace('-', '')
+                    all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').timestamp.iloc[-1].split(' ')[0]\
+                                .replace('-', '')
                     print('You have chosen UPDATE, so we will update since:', all_data)
                     to_update = [x for x in available_data if x >= all_data]
                     return sorted(to_update), frequency
+
                 except:
-                    all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0].replace('-', '')
+                    all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0]\
+                                .replace('-', '')
                     print('You have chosen UPDATE, so we will update since:', all_data)
                     to_update = [x for x in available_data if x >= all_data]
                     return sorted(to_update), frequency
@@ -199,9 +208,8 @@ class Database(object):
         else:
             print('There is no data for this date')
 
-
     @staticmethod
-    def updateDatabase(date, available_data):
+    def update_database(date, available_data):
         """
         Updates our database with new scraped data.
 
@@ -218,15 +226,14 @@ class Database(object):
         """
 
         available_data = available_data.to_dict(orient='records')
-        # print(available_data)
         try:
             Database.DATABASE[date].insert_many(available_data)
             print(f'Your new collection {date}, has been created successfully')
+
         except:
             print(f'There is no available data for the date: ', date)
 
-
-    def datesDoubleCheck (self, scraped_interval):
+    def dates_double_check(self, scraped_interval):
         """
         Checks for empty collections.
 
@@ -241,12 +248,11 @@ class Database(object):
 
         """
         print('We are collecting empty datasets, wait a moment....')
-        Database.DATABASE = self.client[self.databaseName]
+        Database.DATABASE = self._client[self.databaseName]
         double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
         print('\nSince there is no stored data, you should double check these collections: \n\n', double_check)
         print(f'\nThere are {len(double_check)} collections you should check.')
         return double_check
-
 
 
 class DatabaseUpdator(Database):
@@ -255,12 +261,10 @@ class DatabaseUpdator(Database):
 
     """
 
-    def __init__(self):
-        pass
+    # def __init__(self):
+    #     pass
 
-
-
-    def updateDB(self):
+    def update_db(self):
         """
         Shows a list of available collections we can find inside the selected database and asks if we are interested
         in updating our database with new data.
@@ -274,7 +278,7 @@ class DatabaseUpdator(Database):
 
         """
 
-        Database.DATABASE = self.client[self.databaseName]
+        Database.DATABASE = self._client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
 

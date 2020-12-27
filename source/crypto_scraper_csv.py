@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 
-def dates_converter(day1='20141122', max_date=''):               # 20141122 is the first available date provided in the website
+def dates_converter(day1='20141122', max_date=''):
     """
     Taking the first available date (if anything else is specified when calling the function) and converts it
     into dateformat to add one day and iterate every csv file in the website.
@@ -26,7 +26,7 @@ def dates_converter(day1='20141122', max_date=''):               # 20141122 is t
             next_day = str(date_format + timedelta(days=day))
             next_day_format = next_day.replace('-', '').split()[0]
 
-            if int(next_day_format) <= max_date:
+            if int(next_day_format) <= int(max_date):
                 dates.append(next_day_format)
 
         return dates
@@ -103,5 +103,3 @@ def data_obtainer(interval, crypto, name):
     print(f'Check data for dates: [{no_data_found}]')
 
     return csv_creator(crypto_data, name, crypto)
-
-
