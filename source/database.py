@@ -6,8 +6,8 @@ from pymongo import MongoClient
 
 class Database(object):
     """
-    Access to different databases where daily collections containing raw data from the orderbook for a specified
-    cryptocurrency (tick level) are stored.
+    Access to different databases where daily collections are stored containing tick data from the orderbook
+    and for a specified cryptocurrency.
 
     # Execute in your terminal: brew services restart mongodb-community
 
@@ -20,13 +20,12 @@ class Database(object):
         Connection to your localhost database and first function execution.
 
         """
-
-        self.client = MongoClient('localhost', 27017)
+        self._client = MongoClient('localhost', 27017)
         self.databaseName = str(self.select_database())
 
     def select_database(self):
         """
-        Shows a list of databases you can try to connect and asks to write the one you are interested.
+        Shows a list of your existing databases and allows you to create a new one in case you need it.
 
         Arguments:
         ----------
@@ -38,13 +37,14 @@ class Database(object):
 
         """
 
-        print(f'Available databases: {sorted(self.client.list_database_names())}. '
+        print(f'Available databases: {sorted(self._client.list_database_names())}. '
               f'You can create a new one by writing a different name from the listed ones.')
 
         print('Please, write the one you are interested in:')
         self.databaseName = str(input())
-        if self.databaseName in self.client.list_database_names():
+        if self.databaseName in self._client.list_database_names():
             return self.databaseName
+
         else:
             print(f'Sorry, we do not have any database named: {self.databaseName}. '
                   f'Write "yes" if you would like to create a new one named {self.databaseName}. '
@@ -58,20 +58,20 @@ class Database(object):
                                    .replace('-', ''))-1
 
                     print('Creating your database since:', last_val)
-                    connection = self.client
+                    connection = self._client
                     # new_collection = connection[self.databaseName].create_collection(str(last_val))
                     connection[self.databaseName].create_collection(str(last_val))
-                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    print(f'Current Databases: {sorted(self._client.list_database_names())}.')
                     return self.databaseName
 
                 except:
                     print("We couldn't detect any existing csv file, so we are going to create a new one from scratch.")
                     last_val = 20141121
                     print('Creating your database since:', last_val)
-                    connection = self.client
+                    connection = self._client
                     # new_collection = connection[self.databaseName].create_collection(str(last_val))
                     connection[self.databaseName].create_collection(str(last_val))
-                    print(f'Current Databases: {sorted(self.client.list_database_names())}.')
+                    print(f'Current Databases: {sorted(self._client.list_database_names())}.')
                     return self.databaseName
 
             else:
@@ -96,7 +96,7 @@ class Database(object):
             print(f'The database {collection} has been deleted successfully!')
 
         else:
-            Database.DATABASE = self.client[self.databaseName]
+            Database.DATABASE = self._client[self.databaseName]
             print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
             print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
             collections = str(input())
@@ -117,8 +117,8 @@ class Database(object):
                 Database.DATABASE[collections].drop()
 
     def current_data(self):
-        Database.DATABASE = self.client[self.databaseName]
-        available_data = sorted(self.client[self.databaseName].list_collection_names())
+        Database.DATABASE = self._client[self.databaseName]
+        available_data = sorted(self._client[self.databaseName].list_collection_names())
         print('Your current collections available inside the database are: ', available_data)
         print('The last updated collection is: ', available_data[-1])
         return available_data
@@ -137,7 +137,7 @@ class Database(object):
 
         """
 
-        Database.DATABASE = self.client[self.databaseName]
+        Database.DATABASE = self._client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
 
@@ -248,7 +248,7 @@ class Database(object):
 
         """
         print('We are collecting empty datasets, wait a moment....')
-        Database.DATABASE = self.client[self.databaseName]
+        Database.DATABASE = self._client[self.databaseName]
         double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
         print('\nSince there is no stored data, you should double check these collections: \n\n', double_check)
         print(f'\nThere are {len(double_check)} collections you should check.')
@@ -278,7 +278,7 @@ class DatabaseUpdator(Database):
 
         """
 
-        Database.DATABASE = self.client[self.databaseName]
+        Database.DATABASE = self._client[self.databaseName]
         available_data = sorted(Database.DATABASE.list_collection_names())
         print('Available data: ', available_data)
 

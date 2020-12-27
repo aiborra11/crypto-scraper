@@ -36,7 +36,6 @@ class ProcessData(object):
             Dataframe with no duplicated transactions.
 
         """
-
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(

@@ -88,14 +88,13 @@ if __name__ == "__main__":
             else:
                 frequency = rawData[1]
 
+            df_raw = pd.DataFrame()
             for num, raw in enumerate(tqdm(rawData[0])):
-                print('--S', num)
-                # print('aaaa', len(rawData[0]))
-                # print(rawData[0])
-                df_raw = pd.DataFrame()
                 df_raw = pd.concat([df_raw, pd.DataFrame(Database.DATABASE[raw].find({}))])
-                if num % 100 == 0:
+                # Grouping collections and generating df by groups to improve performance.
+                if (num % 100 == 0) & (num > 0):
                     get_data(df_raw, frequency)
+                    df_raw = pd.DataFrame()
 
                 elif raw == rawData[0][-1]:
                     print('collecting data...')
