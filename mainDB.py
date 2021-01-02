@@ -1,7 +1,8 @@
-from source.crypto_scraper_db import data_updator
+# from source.crypto_scraper_db import data_scraper
 from source.crypto_scraper_csv import interval_to_scrape
-
 from source.database import Database
+
+# from database import Database
 from source.dataframe_creator import get_data
 
 from tqdm import tqdm
@@ -10,26 +11,26 @@ import pandas as pd
 # 20190303
 
 
-def main(day_update, max_date):
-    """
-    Pipeline to execute the functions from the source.crypto_scraper_db and source.crypto_scraper_csv script.
-
-    Arguments:
-    ----------
-        crypto {[str]} -- crypto we are interested in collecting data. Feel free to modify.
-        day_update {[str]} -- date from which we want to start to collect data. Feel free to modify.
-
-    Returns:
-    --------
-        [gzip]
-            File stored in a mongo database containing the data for the desired crypto and the desired date.
-
-    """
-
-    print('Preparing your data...')
-    dates_norm = interval_to_scrape(day_update, max_date)
-    print('Charging data to update...')
-    data_updator(dates_norm)
+# def main(day_update, max_date):
+#     """
+#     Pipeline to execute the functions from the source.crypto_scraper_db and source.crypto_scraper_csv script.
+#
+#     Arguments:
+#     ----------
+#         crypto {[str]} -- crypto we are interested in collecting data. Feel free to modify.
+#         day_update {[str]} -- date from which we want to start to collect data. Feel free to modify.
+#
+#     Returns:
+#     --------
+#         [gzip]
+#             File stored in a mongo database containing the data for the desired crypto and the desired date.
+#
+#     """
+#
+#     print('Preparing your data...')
+#     dates_norm = interval_to_scrape(day_update, max_date)
+#     print('Charging data to update...')
+#     data_scraper(dates_norm)
 
 
 if __name__ == "__main__":
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     """
 
     while True:
-        print('\nEnter 1 if you want to update/create your database:')
+        print('\nEnter 1 if you want to connect/create your database:')
         print('Enter 2 if you want to collect RAW data as a csv file:')
         print('Enter 3 if you want to collect PROCESSED data as a csv file:')
         print('Enter 4 if you want to DELETE a collection from your database:')
@@ -51,8 +52,11 @@ if __name__ == "__main__":
         userChoice = int(input())
 
         if userChoice == 1:
-            database = Database()
-            print('Select your desired crypto: ')
+            db = Database()
+            selected_collection = db.select_collection()
+            data = db.populate_collection(selected_collection)
+
+
 
             # print('Write "yes" to update since your last record or write a date in a format "YYMMDD" '
             #       'to update since there.')
@@ -60,30 +64,30 @@ if __name__ == "__main__":
 
             update_since = str(input())
             if update_since == 'yes':
-                available_data = database.current_data()
+                available_data = db.show_available_collections()
                 # update_from = database.showAvailableData()[0]
                 main(day_update=available_data[-1], max_date='')
 
             elif update_since == 'until':
                 print('Write the date until the one you would like to update your db (YYMMDD): ')
                 update_until = str(input())
-                available_data = database.current_data()
+                available_data = db.show_available_collections()
                 main(day_update=20141128, max_date=int(update_until))
 
             else:
                 main(day_update=update_since, max_date='')
 
         elif userChoice == 2:
-            database = Database()
-            rawData = database.show_available_data()[0]
+            db = Database()
+            rawData = db.populate_collection()[0]
             for raw in tqdm(rawData):
                 df_raw = pd.DataFrame(Database.COLLECTION[raw].find({}))
                 print('Preparing your RAW data for: ', raw)
                 df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
 
         elif userChoice == 3:
-            database = Database()
-            rawData = database.show_available_data()
+            db = Database()
+            rawData = db.populate_collection()
             if rawData[1] == '':
                 print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
                 frequency = str(input()).replace(' ', '')
@@ -106,18 +110,18 @@ if __name__ == "__main__":
                     pass
 
         elif userChoice == 4:
-            database = Database()
-            deletedColl = database.remove_collection()
+            db = Database()
+            deletedColl = db.remove_collection()
             print(f'The collection has been removed successfully from the database.')
 
         elif userChoice == 5:
-            database = Database()
-            currData = database.current_data()
+            db = Database()
+            currData = db.show_available_collections()
 
         elif userChoice == 6:
             dates = interval_to_scrape('20141122')
-            database = Database()
-            warnings = database.dates_double_check(dates)
+            db = Database()
+            warnings = db.dates_double_check(dates)
             print('You should double-check the data for these dates: ', warnings)
 
         elif userChoice == 7:
