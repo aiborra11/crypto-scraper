@@ -2,6 +2,8 @@ import pandas as pd
 from tqdm import tqdm
 from os import listdir
 from pymongo import MongoClient
+from datetime import datetime, timedelta
+
 
 
 class Database(object):
@@ -13,7 +15,7 @@ class Database(object):
 
     """
 
-    DATABASE = None
+    COLLECTION = None
 
     def __init__(self):
         """
@@ -22,6 +24,7 @@ class Database(object):
         """
         self._client = MongoClient('localhost', 27017)
         self.databaseName = str(self.select_database())
+        self.available_collections = self.current_data()
 
     def select_database(self):
         """
@@ -38,44 +41,76 @@ class Database(object):
         """
 
         print(f'Available databases: {sorted(self._client.list_database_names())}. '
-              f'You can create a new one by writing a different name from the listed ones.')
+              f'\nYou can create a new one by writing a different name from the listed ones.')
 
         print('Please, write the one you are interested in:')
-        self.databaseName = str(input())
-        if self.databaseName in self._client.list_database_names():
-            return self.databaseName
+
+        db_name = str(input())
+        if db_name in self._client.list_database_names():
+            print(f'Connecting...')
+            return db_name
 
         else:
-            print(f'Sorry, we do not have any database named: {self.databaseName}. '
-                  f'Write "yes" if you would like to create a new one named {self.databaseName}. '
-                  f'Otherwise, restart the DB and try again.', )
+            print(f'Sorry, we do not have any database named: {db_name}. '
+                  f'Write "yes" if you would like to create a new one named {db_name}. '
+                  f'Otherwise, restart the DB and try again.')
 
             new_db = str(input()).lower()
             if new_db == 'yes':
-                try:
-                    print("We've detected an existing csv file, so we are going to update it since its last value.")
-                    last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0]
-                                   .replace('-', ''))-1
+                # Finding out the available cryptocurrencies
+                interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
+                cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
+                                      f'{interval}.csv.gz')
 
-                    print('Creating your database since:', last_val)
-                    connection = self._client
-                    # new_collection = connection[self.databaseName].create_collection(str(last_val))
-                    connection[self.databaseName].create_collection(str(last_val))
-                    print(f'Current Databases: {sorted(self._client.list_database_names())}.')
-                    return self.databaseName
+                print('\nChoose from the list below the cryptocurrency pair you are interested in:\n\n',
+                      cryptos['symbol'].unique())
 
-                except:
-                    print("We couldn't detect any existing csv file, so we are going to create a new one from scratch.")
-                    last_val = 20141121
-                    print('Creating your database since:', last_val)
-                    connection = self._client
-                    # new_collection = connection[self.databaseName].create_collection(str(last_val))
-                    connection[self.databaseName].create_collection(str(last_val))
-                    print(f'Current Databases: {sorted(self._client.list_database_names())}.')
-                    return self.databaseName
+                # Selecting the name of the collection we are going to generate inside our new db
+                crypto_collection = str(input()).upper()
+                new_collection = self._client[db_name].create_collection(str(crypto_collection))
+                return db_name
+
+
 
             else:
                 quit()
+
+
+
+        # return None
+
+                #     last_val = int(pd.read_csv(f'data.nosync/1D_general.csv').Timestamp.iloc[-1].split(' ')[0]
+                #                    .replace('-', ''))-1
+                #     print("Great! We've detected an existing file, so we are going to update it since its last record.")
+                #     print('Creating your database since:', last_val)
+                #     connection = self._client
+                #     # new_collection = connection[self.databaseName].create_collection(str(last_val))
+                #     connection[self.databaseName].create_collection(str(last_val))
+                #     print(f'Current Databases: {sorted(self._client.list_database_names())}.')
+                #     return self.databaseName
+                #
+                # except:
+                #     last_val = 20141121
+                #     print("We couldn't detect any existing collection in yor DB, so we are going to create a new one since "
+                #           "the first available record in the remote DB.")
+                #
+                #     connection = self._client
+                #     # new_collection = connection[self.databaseName].create_collection(str(last_val))
+                #
+                #     # print('Interval to be scrapped:', interval[:-1])
+                #     cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
+                #                           f'{str(interval[-2])}.csv.gz')
+                #
+                #     print('\n\nChoose from the list below the cryptocurrency pair you are interested:\n',
+                #           cryptos['symbol'].unique())
+                #     crypto = str(input()).upper()
+                #
+                #     connection[self.databaseName].create_collection(str(last_val))
+                #     print(f'Current Databases: {sorted(self._client.list_database_names())}.')
+                #     return self.databaseName
+
+            # else:
+            #     quit()
 
     def remove_collection(self, collection=''):
         """
@@ -92,35 +127,35 @@ class Database(object):
 
         """
         if collection:
-            Database.DATABASE[collection].drop()
+            Database.COLLECTION[collection].drop()
             print(f'The database {collection} has been deleted successfully!')
 
         else:
-            Database.DATABASE = self._client[self.databaseName]
-            print(f'Available collections for this database: {sorted(Database.DATABASE.list_collection_names())}')
+            Database.COLLECTION = self._client[self.databaseName]
+            print(f'Available collections for this database: {sorted(Database.COLLECTION.list_collection_names())}')
             print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
             collections = str(input())
 
             if collections == 'all':
                 print('We are preparing all available collections: ', collections)
-                for collection in tqdm(sorted(Database.DATABASE.list_collection_names())):
-                    Database.DATABASE[collection].drop()
+                for collection in tqdm(sorted(Database.COLLECTION.list_collection_names())):
+                    Database.COLLECTION[collection].drop()
 
             elif len(collections) > 1:
                 collections_date = collections.replace(',', '').replace("'", '').split(' ')
                 print("We are deleting the collections you've selected: ", collections_date)
                 for collection in tqdm(sorted(collections_date)):
-                    Database.DATABASE[collection].drop()
+                    Database.COLLECTION[collection].drop()
 
             else:
                 print("We are deleting the collection you've selected: ", collections)
-                Database.DATABASE[collections].drop()
+                Database.COLLECTION[collections].drop()
 
     def current_data(self):
-        Database.DATABASE = self._client[self.databaseName]
+        Database.COLLECTION = self._client[self.databaseName]
         available_data = sorted(self._client[self.databaseName].list_collection_names())
-        print('Your current collections available inside the database are: ', available_data)
-        print('The last updated collection is: ', available_data[-1])
+        print(f'Your current available collections inside your "{self.databaseName}" database are:', available_data)
+        # print('The last updated collection is: ', available_data[-1])
         return available_data
 
     def show_available_data(self):
@@ -137,8 +172,8 @@ class Database(object):
 
         """
 
-        Database.DATABASE = self._client[self.databaseName]
-        available_data = sorted(Database.DATABASE.list_collection_names())
+        Database.COLLECTION = self._client[self.databaseName]
+        available_data = sorted(Database.COLLECTION.list_collection_names())
         print('Available data: ', available_data)
 
         print(f'\nThere are {len(available_data)} available collections in your database.')
@@ -227,7 +262,7 @@ class Database(object):
 
         available_data = available_data.to_dict(orient='records')
         try:
-            Database.DATABASE[date].insert_many(available_data)
+            Database.COLLECTION[date].insert_many(available_data)
             print(f'Your new collection {date}, has been created successfully')
 
         except:
@@ -248,8 +283,8 @@ class Database(object):
 
         """
         print('We are collecting empty datasets, wait a moment....')
-        Database.DATABASE = self._client[self.databaseName]
-        double_check = [date for date in scraped_interval if date not in Database.DATABASE.list_collection_names()]
+        Database.COLLECTION = self._client[self.databaseName]
+        double_check = [date for date in scraped_interval if date not in Database.COLLECTION.list_collection_names()]
         print('\nSince there is no stored data, you should double check these collections: \n\n', double_check)
         print(f'\nThere are {len(double_check)} collections you should check.')
         return double_check
@@ -278,8 +313,8 @@ class DatabaseUpdator(Database):
 
         """
 
-        Database.DATABASE = self._client[self.databaseName]
-        available_data = sorted(Database.DATABASE.list_collection_names())
+        Database.COLLECTION = self._client[self.databaseName]
+        available_data = sorted(Database.COLLECTION.list_collection_names())
         print('Available data: ', available_data)
 
         print(f'\nThere are {len(available_data)} available collections in your database.')

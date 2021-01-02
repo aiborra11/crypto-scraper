@@ -1,5 +1,5 @@
 from source.crypto_scraper_db import data_updator
-from source.crypto_scraper_csv import dates_converter
+from source.crypto_scraper_csv import interval_to_scrape
 
 from source.database import Database
 from source.dataframe_creator import get_data
@@ -27,7 +27,7 @@ def main(day_update, max_date):
     """
 
     print('Preparing your data...')
-    dates_norm = dates_converter(day_update, max_date)
+    dates_norm = interval_to_scrape(day_update, max_date)
     print('Charging data to update...')
     data_updator(dates_norm)
 
@@ -52,9 +52,11 @@ if __name__ == "__main__":
 
         if userChoice == 1:
             database = Database()
-            print('Write "yes" to update since your last record or write a date in a format "YYMMDD" '
-                  'to update since there.')
-            print('In case you want to update until a certain date, write until')
+            print('Select your desired crypto: ')
+
+            # print('Write "yes" to update since your last record or write a date in a format "YYMMDD" '
+            #       'to update since there.')
+            # print('In case you want to update until a certain date, write until')
 
             update_since = str(input())
             if update_since == 'yes':
@@ -75,7 +77,7 @@ if __name__ == "__main__":
             database = Database()
             rawData = database.show_available_data()[0]
             for raw in tqdm(rawData):
-                df_raw = pd.DataFrame(Database.DATABASE[raw].find({}))
+                df_raw = pd.DataFrame(Database.COLLECTION[raw].find({}))
                 print('Preparing your RAW data for: ', raw)
                 df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
 
@@ -90,7 +92,7 @@ if __name__ == "__main__":
 
             df_raw = pd.DataFrame()
             for num, raw in enumerate(tqdm(rawData[0])):
-                df_raw = pd.concat([df_raw, pd.DataFrame(Database.DATABASE[raw].find({}))])
+                df_raw = pd.concat([df_raw, pd.DataFrame(Database.COLLECTION[raw].find({}))])
                 # Grouping collections and generating df by groups to improve performance.
                 if (num % 100 == 0) & (num > 0):
                     get_data(df_raw, frequency)
@@ -113,7 +115,7 @@ if __name__ == "__main__":
             currData = database.current_data()
 
         elif userChoice == 6:
-            dates = dates_converter('20141122')
+            dates = interval_to_scrape('20141122')
             database = Database()
             warnings = database.dates_double_check(dates)
             print('You should double-check the data for these dates: ', warnings)

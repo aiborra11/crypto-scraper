@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 
-def dates_converter(day1='20141122', max_date=''):
+def interval_to_scrape(day1='20141122', max_date=''):
     """
     Taking the first available date (if anything else is specified when calling the function) and converts it
     into dateformat to add one day and iterate every csv file in the website.
@@ -30,6 +30,7 @@ def dates_converter(day1='20141122', max_date=''):
                 dates.append(next_day_format)
 
         return dates
+
     else:
         max_date = int(datetime.today().strftime('%Y%m%d'))
         for day in range(2500):
