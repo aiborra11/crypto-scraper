@@ -179,22 +179,26 @@ class Database(object):
 
     def populate_collection(self, selected_collection):
         """
-        Shows a list of available collections we can find inside the selected database and asks if we are interested
-        in updating our database with new data.
+        Populates our collection according to our desired format. We can choose between:
+            a) Origin: Collect all data since the very beginning
+            b) Update: Checks our last available record and updates from there till yesterday.
+            c) Interval: Collects data for a specific interval of time.
+            d) Concrete: Collects data for a specific day.
 
         Arguments:
         ----------
-        ()
+        selected_collection {[str]} --  client connected to our db and collection
+
         Returns:
         --------
-            Collections we are willing to include into our database.
+            Populated collection with the data we have specified.
 
         """
 
         print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
         print("If you'd like to update your database, write: 'UPDATE'.")
         print("To collect data for a specific interval write: 'INTERVAL'.")
-        # print("To update ONLY a CONCRETE period, write: CONCRETE.")
+        print("To update ONLY a CONCRETE period, write: CONCRETE.")
 
         available_options = ['origin', 'update', 'interval', 'concrete']
 
@@ -269,70 +273,31 @@ class Database(object):
                 data = data_scraper(date, self.collection_name)
                 self.update_database(date, data, selected_collection)
 
+        elif interval == 'concrete':
+            print(f'You have chosen CONCRETE, so we are going to collect data for that specific date'
+                  f'\nWrite your date following format: "YYYYMMDD"')
 
-    # interval = str(input()).lower()
-        # if interval == 'last':
-        #     try:
-        #         last_val = data[-1]
-        #         print('You have chosen LAST, so we will update your general csv file since:', last_val)
-        #         to_update = [x for x in available_data if x >= last_val]
-        #         return sorted(to_update), ''
-        #     except:
-        #         print('You do not have any record yet. We are going to update since the very beginning...')
-        #         to_update = [x for x in available_data if x >= '20141121']
-        #         return sorted(to_update), ''
-        #
-        # elif interval == 'origin':
-        #     print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning.')
-        #     to_update = [x for x in available_data if x >= '20141121']
-        #     return sorted(to_update), ''
-        #
-        # elif interval == 'concrete':
-        #     print('Write the period you want to collect in the following format: "YYYYMMDD" ')
-        #     interval = str(input())
-        #     if interval in available_data:
-        #         print(f'The interval: {interval} is available')
-        #         return [interval], ''
-        #     else:
-        #         print('Sorry but we do not have this collection in our database.')
-        #
-        # elif interval in available_data:
-        #     print(f'The interval: {interval} is available')
-        #     to_update = [x for x in available_data if x >= interval]
-        #     return sorted(to_update), ''
-        #
-        # elif interval == 'update':
-        #     file = listdir('data.nosync/')
-        #     datatypes = []
-        #     for f in file:
-        #         if f not in datatypes and f.endswith(".csv"):
-        #             datatypes.append(f.split('_')[0].replace('.', '').replace('readmetxt', '').replace('DS', ''))
-        #     print('These are your existing timeframes/datatype files: ', set(datatypes))
-        #     print("Which is the timeframe/datatype you'd like to update [XMin, XH, D, W, M, RAW...]")
-        #
-        #     frequency = str(input()).replace(' ', '')
-        #     if frequency != 'RAW':
-        #         try:
-        #             all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').timestamp.iloc[-1].split(' ')[0]\
-        #                         .replace('-', '')
-        #             print('You have chosen UPDATE, so we will update since:', all_data)
-        #             to_update = [x for x in available_data if x >= all_data]
-        #             return sorted(to_update), frequency
-        #
-        #         except:
-        #             all_data = pd.read_csv(f'data.nosync/{frequency}_general.csv').Timestamp.iloc[-1].split(' ')[0]\
-        #                         .replace('-', '')
-        #             print('You have chosen UPDATE, so we will update since:', all_data)
-        #             to_update = [x for x in available_data if x >= all_data]
-        #             return sorted(to_update), frequency
-        #     else:
-        #         raws = [f.replace('RAW_', '').replace('.csv', '') for f in file if f.startswith('RAW_')]
-        #         print('You have chosen UPDATE, so we will update since:', sorted(raws)[-1])
-        #         to_update = [x for x in available_data if x >= sorted(raws)[-1]]
-        #         return sorted(to_update), frequency
-        #
-        # else:
-        #     print('There is no data for this date')
+        while True:
+            try:
+                day1 = int(input())
+            except ValueError:
+                print('Sorry, something went wrong. Please, try again! Write your starting date:')
+                continue
+            if len(str(day1)) != 8:
+                print('Please, write it again. Remember to follow this format: "YYYYMMDD"')
+                continue
+            else:
+                break
+
+        interval_to_update = sorted(interval_to_scrape(day1=day1, max_date=day1))
+        print('Updating interval: ', interval_to_update)
+
+        # Scraping data from bitmex and inserting it into our collection
+        for date in tqdm(interval_to_update):
+            print(f'{date} is being processed...')
+            data = data_scraper(date, self.collection_name)
+            self.update_database(date, data, selected_collection)
+
 
     @staticmethod
     def update_database(date, available_data, db_collection):
