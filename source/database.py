@@ -298,7 +298,6 @@ class Database(object):
             data = data_scraper(date, self.collection_name)
             self.update_database(date, data, selected_collection)
 
-
     @staticmethod
     def update_database(date, available_data, db_collection):
         """
@@ -316,7 +315,7 @@ class Database(object):
                 Including new data for the selected cryptocurrency
 
         """
-        # Converting into a format required for inserting data into mongodb
+        # Converting scraped data into a format required for inserting data into mongodb
         available_data = available_data.to_dict(orient='records')
         try:
             db_collection.insert_many(available_data)
