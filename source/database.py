@@ -1,5 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
+import pymongo
 from os import listdir
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -28,7 +29,8 @@ class Database(object):
 
     def select_database(self):
         """
-        Shows a list of your existing databases and allows you to create a new one in case you need it.
+        Shows a list of your existing databases and connects us to the one we are interested in.
+        It also allows us to create a new one in case we need it.
 
         Arguments:
         ----------
@@ -60,7 +62,8 @@ class Database(object):
 
     def select_collection(self):
         """
-        Shows a list of your existing databases and allows you to create a new one in case you need it.
+        Shows a list of your existing collections and connects us to the one we are interested in.
+        It also allows us to create a new one in case we need it.
 
         Arguments:
         ----------
@@ -68,27 +71,33 @@ class Database(object):
 
         Returns:
         --------
-            Access to the written database.
+            Access to the written collection and to its data.
 
         """
         available_data = self.show_available_collections()
+
+        # In case we have data stored already
         if available_data:
             interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
             cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                                   f'{interval}.csv.gz')
-
             print(f'These are your current stored collections inside your "{self.db_name}" database:', available_data)
             print('Select the one you are willing to connect or write a new one if you want to create it:\n', cryptos['symbol'].unique())
+
             self.collection_name = str(input()).upper()
+            # If we had the collection stored already
             if self.collection_name in available_data:
                 print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
                 return self.databaseName[self.collection_name]
+
+            # To generate a new collection storing a new crypto
             else:
                 self.databaseName.create_collection(str(self.collection_name))
                 print(
                     f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
                 return self.databaseName[self.collection_name]
 
+        # Our db is totally empty
         else:
             # Finding out the available cryptocurrencies
             interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
@@ -143,9 +152,18 @@ class Database(object):
                 self.databaseName[collections].drop()
 
     def show_available_collections(self):
+        """
+         Shows a list of available collections we can find inside the selected database
+
+         Arguments:
+         ----------
+         ()
+         Returns:
+         --------
+        Our stored collections in the db we have connected
+        """
         available_data = sorted(self.databaseName.list_collection_names())
         return available_data
-
 
     def populate_collection(self, selected_collection):
         """
@@ -160,17 +178,10 @@ class Database(object):
             Collections we are willing to include into our database.
 
         """
-        # print('---~', self._client[self.db_name].selected_collection.find({}))
-        # data = self._client[self.db_name].selected_collection.find({})
-        # Database.COLLECTION = self._client[self.databaseName]
-        # available_data = sorted(Database.selected_collection.list_collection_names())
-
-
 
         print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
-        # print("If you'd like to update your database, write: 'UPDATE'.")
-        # print("If you'd like to update since the last available record in the database, write 'LAST'.")
-        # print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
+        print("If you'd like to update your database, write: 'UPDATE'.")
+        print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
         # print("To update ONLY a CONCRETE period, write: CONCRETE.")
 
 
@@ -179,17 +190,33 @@ class Database(object):
         if interval == 'origin':
             print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning: 20141122.')
 
-            # Generating a list containing the dates we are going to scrape & getting the data
+            # Generating a list containing the dates we are going to scrape
             interval_to_update = sorted(interval_to_scrape(day1='20200101', max_date=''))
+            print('Updating interval: ', interval_to_update)
+
+            # Scraping data from bitmex and inserting it into our collection
             for date in tqdm(interval_to_update[:-1]):
                 print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
                 self.update_database(date, data, selected_collection)
-            # Inserting the data into our collection
 
+        elif interval == 'update':
+            print(f'You have chosen UPDATE, so we are going to collect data since your last day recorded.')
 
+            # Finding out last recorded value inside our collection
+            last_record = selected_collection.find().sort('timestamp', pymongo.DESCENDING).limit(1)
+            last_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in last_record][0]
+            print(f'Your last recorded value was on: {last_date}.')
 
+            # Generating a list containing the dates we are going to scrape
+            interval_to_update = sorted(interval_to_scrape(day1=last_date, max_date=''))
+            print('Updating interval: ', interval_to_update)
 
+            # Scraping data from bitmex and inserting it into our collection
+            for date in tqdm(interval_to_update[1:-1]):
+                print(f'{date} is being processed...')
+                data = data_scraper(date, self.collection_name)
+                self.update_database(date, data, selected_collection)
 
 
     # interval = str(input()).lower()
@@ -259,19 +286,21 @@ class Database(object):
     @staticmethod
     def update_database(date, available_data, db_collection):
         """
-        Updates our database with new scraped data.
+        Inserts scraped data into our selected collection and database.
 
         Arguments:
         ----------
-        date {[str]} -- Date to include in our database.
-        available_data -- Scraped data we will convert into a dict to store into our mongo database.
+        date {[str]} -- Day the data belongs to.
+        available_data {[Dataframe]} -- Scraped data we will convert into a dict to store into our mongo database.
+        db_collection {[str]} --  client connected to our db and collection
 
         Returns:
         --------
             {[Collection]}
-                A new collection into our database for the specified date and currency.
+                Including new data for the selected cryptocurrency
 
         """
+        # Converting into a format required for inserting data into mongodb
         available_data = available_data.to_dict(orient='records')
         try:
             db_collection.insert_many(available_data)
