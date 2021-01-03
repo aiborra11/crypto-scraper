@@ -324,7 +324,7 @@ class Database(object):
         except:
             print(f'There is no available data for the date: ', date)
 
-    def dates_double_check(self, scraped_interval):
+    def find_missing_data(self, selected_collection):
         """
         Checks for empty collections.
 
@@ -338,12 +338,23 @@ class Database(object):
                 With collection names we should double check.
 
         """
-        print('We are collecting empty datasets, wait a moment....')
-        Database.COLLECTION = self._client[self.databaseName]
-        double_check = [date for date in scraped_interval if date not in Database.COLLECTION.list_collection_names()]
-        print('\nSince there is no stored data, you should double check these collections: \n\n', double_check)
-        print(f'\nThere are {len(double_check)} collections you should check.')
-        return double_check
+
+        print('Checking if you have missing data...')
+
+        # Finding out first available record in our collection...
+        first_record = selected_collection.find().sort('timestamp', pymongo.ASCENDING).limit(1)
+        first_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in first_record][0]
+        print('Your first record is from:', first_date)
+
+        # Filtering by timestamp is the only datapoint we actually need
+        dates = selected_collection.find({}, {'_id': 0, 'timestamp': 1})
+        actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
+        # Comparing real datapoints we should currently have from our first record until today's date
+        datapoints = sorted(set(interval_to_scrape(day1=first_date, max_date='')))
+        missing_dates = list(datapoints - actual_dates)
+
+        return missing_dates
+
 
 
 class DatabaseUpdator(Database):

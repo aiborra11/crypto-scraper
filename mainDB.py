@@ -66,26 +66,20 @@ if __name__ == "__main__":
         selected_collection = db.select_collection()
         data = db.populate_collection(selected_collection)
 
-
-
-        # print('Write "yes" to update since your last record or write a date in a format "YYMMDD" '
-        #       'to update since there.')
-        # print('In case you want to update until a certain date, write until')
-
-        update_since = str(input())
-        if update_since == 'yes':
-            available_data = db.show_available_collections()
-            # update_from = database.showAvailableData()[0]
-            main(day_update=available_data[-1], max_date='')
-
-        elif update_since == 'until':
-            print('Write the date until the one you would like to update your db (YYMMDD): ')
-            update_until = str(input())
-            available_data = db.show_available_collections()
-            main(day_update=20141128, max_date=int(update_until))
-
-        else:
-            main(day_update=update_since, max_date='')
+        # update_since = str(input())
+        # if update_since == 'yes':
+        #     available_data = db.show_available_collections()
+        #     # update_from = database.showAvailableData()[0]
+        #     main(day_update=available_data[-1], max_date='')
+        #
+        # elif update_since == 'until':
+        #     print('Write the date until the one you would like to update your db (YYMMDD): ')
+        #     update_until = str(input())
+        #     available_data = db.show_available_collections()
+        #     main(day_update=20141128, max_date=int(update_until))
+        #
+        # else:
+        #     main(day_update=update_since, max_date='')
 
     elif userChoice == 2:
         db = Database()
@@ -129,9 +123,10 @@ if __name__ == "__main__":
         currData = db.show_available_collections()
 
     elif userChoice == 6:
-        dates = interval_to_scrape('20141122')
+        # dates = interval_to_scrape('20141122')
         db = Database()
-        warnings = db.dates_double_check(dates)
+        selected_collection = db.select_collection()
+        warnings = db.find_missing_data(selected_collection)
         print('You should double-check the data for these dates: ', warnings)
 
     elif userChoice == 7:
