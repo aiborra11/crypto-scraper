@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 
-from source.crypto_scraper_csv import dates_converter, data_obtainer
+from source.crypto_scraper_csv import interval_to_scrape, data_obtainer
 
 
 def main(day1):
@@ -26,7 +26,7 @@ def main(day1):
     crypto = str(input()).upper()
 
     print('Preparing your data...')
-    dates = dates_converter(day1)
+    dates = interval_to_scrape(day1)
     print('Charging first csv...')
     pd.DataFrame(data_obtainer(dates[:500], crypto, 'data1gzip'))
     time.sleep(15)
