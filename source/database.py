@@ -5,8 +5,7 @@ from os import listdir
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
-from source.crypto_scraper_csv import interval_to_scrape
-from source.utils import data_scraper
+from source.utils import data_scraper, interval_to_scrape
 
 
 class Database(object):
@@ -17,8 +16,6 @@ class Database(object):
     # Execute in your terminal: brew services restart mongodb-community
 
     """
-
-    COLLECTION = None
 
     def __init__(self):
         """
@@ -202,7 +199,6 @@ class Database(object):
 
         available_options = ['origin', 'update', 'interval', 'concrete']
 
-        # last_available_day = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
         while True:
             try:
                 interval = str(input()).lower()
@@ -326,16 +322,16 @@ class Database(object):
 
     def find_missing_data(self, selected_collection):
         """
-        Checks for empty collections.
+        Checks missing dates into our collection
 
         Arguments:
         ----------
-        scraped_interval {[list]} -- Dates we are going to check.
+        selected_collection {[str]} --  client connected to our db and collection
 
         Returns:
         --------
             {[list]}
-                With collection names we should double check.
+                With dates we should double check.
 
         """
 
@@ -349,11 +345,12 @@ class Database(object):
         # Filtering by timestamp is the only datapoint we actually need
         dates = selected_collection.find({}, {'_id': 0, 'timestamp': 1})
         actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
+
         # Comparing real datapoints we should currently have from our first record until today's date
         datapoints = sorted(set(interval_to_scrape(day1=first_date, max_date='')))
-        missing_dates = list(datapoints - actual_dates)
-
-        return missing_dates
+        missing_dates = set(datapoints) - set(actual_dates)
+        print(f'You have {len(missing_dates)} warnings.')
+        return sorted(list(missing_dates))
 
 
 

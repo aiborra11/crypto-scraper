@@ -66,21 +66,6 @@ if __name__ == "__main__":
         selected_collection = db.select_collection()
         data = db.populate_collection(selected_collection)
 
-        # update_since = str(input())
-        # if update_since == 'yes':
-        #     available_data = db.show_available_collections()
-        #     # update_from = database.showAvailableData()[0]
-        #     main(day_update=available_data[-1], max_date='')
-        #
-        # elif update_since == 'until':
-        #     print('Write the date until the one you would like to update your db (YYMMDD): ')
-        #     update_until = str(input())
-        #     available_data = db.show_available_collections()
-        #     main(day_update=20141128, max_date=int(update_until))
-        #
-        # else:
-        #     main(day_update=update_since, max_date='')
-
     elif userChoice == 2:
         db = Database()
         rawData = db.populate_collection()[0]
