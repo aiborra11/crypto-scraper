@@ -181,12 +181,24 @@ class Database(object):
 
         print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
         print("If you'd like to update your database, write: 'UPDATE'.")
-        print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
+        print("To collect data for a specific interval write: 'INTERVAL'.")
         # print("To update ONLY a CONCRETE period, write: CONCRETE.")
 
+        available_options = ['origin', 'update', 'interval', 'concrete']
 
-        last_available_day = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
-        interval = str(input()).lower()
+        # last_available_day = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
+        while True:
+            try:
+                interval = str(input()).lower()
+            except ValueError:
+                print("Sorry, I didn't understand that.")
+                continue
+            if interval not in available_options:
+                print("Sorry, I didn't understand that. Please, try again!")
+                continue
+            else:
+                break
+
         if interval == 'origin':
             print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning: 20141122.')
 
@@ -214,6 +226,33 @@ class Database(object):
 
             # Scraping data from bitmex and inserting it into our collection
             for date in tqdm(interval_to_update[1:-1]):
+                print(f'{date} is being processed...')
+                data = data_scraper(date, self.collection_name)
+                self.update_database(date, data, selected_collection)
+
+        elif interval == 'interval':
+            print(f'You have chosen INTERVAL, so we are going to collect data between two dates.'
+                  f'\nWrite your starting day in the following format: "YYYYMMDD"')
+
+            while True:
+                try:
+                    day1 = int(input())
+                    print('Now, write your last date following the same format: ')
+                    max_date = int(input())
+                except ValueError:
+                    print('Sorry, something went wrong. Please, try again! Write your starting date:')
+                    continue
+                if len(str(day1)) != 8 or len(str(max_date)) != 8 or day1 >= max_date:
+                    print('Please, write again your starting and last date.')
+                    continue
+                else:
+                    break
+
+            interval_to_update = sorted(interval_to_scrape(day1=day1, max_date=max_date))
+            print('Updating interval: ', interval_to_update)
+
+            # Scraping data from bitmex and inserting it into our collection
+            for date in tqdm(interval_to_update[:]):
                 print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
                 self.update_database(date, data, selected_collection)

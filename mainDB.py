@@ -48,85 +48,95 @@ if __name__ == "__main__":
         print('Enter 5 if you want to check the current available collections in your database:')
         print('Enter 6 to check date warnings:')
         print('Enter 7 to exit:')
+        available_options = [1, 2, 3, 4, 5, 6, 7]
 
-        userChoice = int(input())
+        try:
+            userChoice = int(input())
+        except ValueError:
+            print("Sorry, I didn't understand that.")
+            continue
+        if userChoice not in available_options:
+            print("Sorry, I didn't understand that.")
+            continue
+        else:
+            break
 
-        if userChoice == 1:
-            db = Database()
-            selected_collection = db.select_collection()
-            data = db.populate_collection(selected_collection)
+    if userChoice == 1:
+        db = Database()
+        selected_collection = db.select_collection()
+        data = db.populate_collection(selected_collection)
 
 
 
-            # print('Write "yes" to update since your last record or write a date in a format "YYMMDD" '
-            #       'to update since there.')
-            # print('In case you want to update until a certain date, write until')
+        # print('Write "yes" to update since your last record or write a date in a format "YYMMDD" '
+        #       'to update since there.')
+        # print('In case you want to update until a certain date, write until')
 
-            update_since = str(input())
-            if update_since == 'yes':
-                available_data = db.show_available_collections()
-                # update_from = database.showAvailableData()[0]
-                main(day_update=available_data[-1], max_date='')
+        update_since = str(input())
+        if update_since == 'yes':
+            available_data = db.show_available_collections()
+            # update_from = database.showAvailableData()[0]
+            main(day_update=available_data[-1], max_date='')
 
-            elif update_since == 'until':
-                print('Write the date until the one you would like to update your db (YYMMDD): ')
-                update_until = str(input())
-                available_data = db.show_available_collections()
-                main(day_update=20141128, max_date=int(update_until))
-
-            else:
-                main(day_update=update_since, max_date='')
-
-        elif userChoice == 2:
-            db = Database()
-            rawData = db.populate_collection()[0]
-            for raw in tqdm(rawData):
-                df_raw = pd.DataFrame(Database.COLLECTION[raw].find({}))
-                print('Preparing your RAW data for: ', raw)
-                df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
-
-        elif userChoice == 3:
-            db = Database()
-            rawData = db.populate_collection()
-            if rawData[1] == '':
-                print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
-                frequency = str(input()).replace(' ', '')
-            else:
-                frequency = rawData[1]
-
-            df_raw = pd.DataFrame()
-            for num, raw in enumerate(tqdm(rawData[0])):
-                df_raw = pd.concat([df_raw, pd.DataFrame(Database.COLLECTION[raw].find({}))])
-                # Grouping collections and generating df by groups to improve performance.
-                if (num % 100 == 0) & (num > 0):
-                    get_data(df_raw, frequency)
-                    df_raw = pd.DataFrame()
-
-                elif raw == rawData[0][-1]:
-                    print('collecting data...')
-                    get_data(df_raw, frequency)
-
-                else:
-                    pass
-
-        elif userChoice == 4:
-            db = Database()
-            deletedColl = db.remove_collection()
-            print(f'The collection has been removed successfully from the database.')
-
-        elif userChoice == 5:
-            db = Database()
-            currData = db.show_available_collections()
-
-        elif userChoice == 6:
-            dates = interval_to_scrape('20141122')
-            db = Database()
-            warnings = db.dates_double_check(dates)
-            print('You should double-check the data for these dates: ', warnings)
-
-        elif userChoice == 7:
-            print('Goodbye!')
-            quit()
+        elif update_since == 'until':
+            print('Write the date until the one you would like to update your db (YYMMDD): ')
+            update_until = str(input())
+            available_data = db.show_available_collections()
+            main(day_update=20141128, max_date=int(update_until))
 
         else:
-            print("\n\nOops! That is not a valid number. Please try a number between 1-6 to proceed:\n")
+            main(day_update=update_since, max_date='')
+
+    elif userChoice == 2:
+        db = Database()
+        rawData = db.populate_collection()[0]
+        for raw in tqdm(rawData):
+            df_raw = pd.DataFrame(Database.COLLECTION[raw].find({}))
+            print('Preparing your RAW data for: ', raw)
+            df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
+
+    elif userChoice == 3:
+        db = Database()
+        rawData = db.populate_collection()
+        if rawData[1] == '':
+            print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
+            frequency = str(input()).replace(' ', '')
+        else:
+            frequency = rawData[1]
+
+        df_raw = pd.DataFrame()
+        for num, raw in enumerate(tqdm(rawData[0])):
+            df_raw = pd.concat([df_raw, pd.DataFrame(Database.COLLECTION[raw].find({}))])
+            # Grouping collections and generating df by groups to improve performance.
+            if (num % 100 == 0) & (num > 0):
+                get_data(df_raw, frequency)
+                df_raw = pd.DataFrame()
+
+            elif raw == rawData[0][-1]:
+                print('collecting data...')
+                get_data(df_raw, frequency)
+
+            else:
+                pass
+
+    elif userChoice == 4:
+        db = Database()
+        deletedColl = db.remove_collection()
+        print(f'The collection has been removed successfully from the database.')
+
+    elif userChoice == 5:
+        db = Database()
+        currData = db.show_available_collections()
+
+    elif userChoice == 6:
+        dates = interval_to_scrape('20141122')
+        db = Database()
+        warnings = db.dates_double_check(dates)
+        print('You should double-check the data for these dates: ', warnings)
+
+    elif userChoice == 7:
+        print('Goodbye!')
+        quit()
+
+    else:
+        print("\n\nOops! That is not a valid number. Please try a number between 1-6 to proceed:\n")
