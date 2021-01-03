@@ -84,7 +84,19 @@ class Database(object):
             print(f'These are your current stored collections inside your "{self.db_name}" database:', available_data)
             print('Select the one you are willing to connect or write a new one if you want to create it:\n', cryptos['symbol'].unique())
 
-            self.collection_name = str(input()).upper()
+            while True:
+                try:
+                    self.collection_name = str(input()).upper()
+                except ValueError:
+                    print("Sorry, I didn't understand that.")
+                    continue
+                if self.collection_name not in cryptos['symbol'].unique():
+                    print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
+                    continue
+                else:
+                    break
+
+
             # If we had the collection stored already
             if self.collection_name in available_data:
                 print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
@@ -191,7 +203,7 @@ class Database(object):
             try:
                 interval = str(input()).lower()
             except ValueError:
-                print("Sorry, I didn't understand that.")
+                print("Sorry, I didn't understand that. Please re-write it in the correct format 'YYYYMMDD'")
                 continue
             if interval not in available_options:
                 print("Sorry, I didn't understand that. Please, try again!")
