@@ -73,11 +73,21 @@ class Database(object):
         """
         available_data = self.show_available_collections()
         if available_data:
-            print(f'These are current available collections inside your "{self.db_name}" database:', available_data)
-            print('Select the one you are willing to connect: ')
+            interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
+            cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
+                                  f'{interval}.csv.gz')
+
+            print(f'These are your current stored collections inside your "{self.db_name}" database:', available_data)
+            print('Select the one you are willing to connect or write a new one if you want to create it:\n', cryptos['symbol'].unique())
             self.collection_name = str(input()).upper()
-            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
-            return self.databaseName[self.collection_name]
+            if self.collection_name in available_data:
+                print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
+                return self.databaseName[self.collection_name]
+            else:
+                self.databaseName.create_collection(str(self.collection_name))
+                print(
+                    f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
+                return self.databaseName[self.collection_name]
 
         else:
             # Finding out the available cryptocurrencies
@@ -263,7 +273,6 @@ class Database(object):
 
         """
         available_data = available_data.to_dict(orient='records')
-        # print('aaahhhssss', available_data)
         try:
             db_collection.insert_many(available_data)
             print(f'Your new collection {date}, has been created successfully')
