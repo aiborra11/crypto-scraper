@@ -47,7 +47,6 @@ class Database(object):
         while True:
             try:
                 self.db_name = str(input()).lower()
-
             except ValueError:
                 print("Sorry, I didn't understand that. Please, try again")
                 continue
@@ -59,6 +58,7 @@ class Database(object):
                 print(f'Sorry, we do not have any database named: {self.db_name}. '
                       f'\nWrite "yes" if you would like to create a new one. '
                       f'Otherwise, re-write the name of the database you would like create/access.')
+                # In case we write yes, we will need to get the previous value to name the db. Otherwise name = yes
                 db_prov.append(self.db_name)
                 continue
 
@@ -67,6 +67,7 @@ class Database(object):
             return self._client[self.db_name]
 
         elif self.db_name == 'yes':
+            # Assigning the previous value to the db_name
             self.db_name = str(db_prov[-1])
             print(f'Creating and connecting to {self.db_name}...')
             return self._client[self.db_name]
