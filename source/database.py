@@ -1,6 +1,7 @@
 import pandas as pd
-from tqdm import tqdm
 import pymongo
+
+from tqdm import tqdm
 from os import listdir
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -41,21 +42,34 @@ class Database(object):
 
         print(f'Available databases: {sorted(self._client.list_database_names())}.')
         print('Please, write the one you are interested in:')
+        db_prov = []
 
-        self.db_name = str(input())
+        while True:
+            try:
+                self.db_name = str(input()).lower()
+
+            except ValueError:
+                print("Sorry, I didn't understand that. Please, try again")
+                continue
+            if self.db_name == 'yes':
+                break
+            elif self.db_name in self._client.list_database_names():
+                break
+            else:
+                print(f'Sorry, we do not have any database named: {self.db_name}. '
+                      f'\nWrite "yes" if you would like to create a new one. '
+                      f'Otherwise, re-write the name of the database you would like create/access.')
+                db_prov.append(self.db_name)
+                continue
+
         if self.db_name in self._client.list_database_names():
             print(f'Connecting to {self.db_name}...')
             return self._client[self.db_name]
 
-        else:
-            print(f'Sorry, we do not have any database named: {self.db_name}. '
-                  f'Write "yes" if you would like to create a new one named {self.db_name}. '
-                  f'Otherwise, restart the DB and try again.')
-
-            new_db = str(input()).lower()
-            if new_db == 'yes':
-                print(f'Creating and connecting to {self.db_name}...')
-                return self._client[self.db_name]
+        elif self.db_name == 'yes':
+            self.db_name = str(db_prov[-1])
+            print(f'Creating and connecting to {self.db_name}...')
+            return self._client[self.db_name]
 
     def select_collection(self):
         """

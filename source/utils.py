@@ -62,11 +62,8 @@ def data_scraper(date, crypto=''):
         dataset = pd.read_csv(
             f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
         crypto_data = dataset[dataset['symbol'] == crypto]
-
         return crypto_data
-        # print(crypto_data)
 
-        # DatabaseUpdator.update_database(str(date), crypto_data, crypto)
     except:
         print(f'No available data for {crypto} at this date.')
         return None
