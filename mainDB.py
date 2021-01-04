@@ -4,6 +4,7 @@ from source.database import Database
 
 # from database import Database
 from source.dataframe_creator import get_data
+from source.csv_generator import CsvGenerator
 
 from tqdm import tqdm
 import pandas as pd
@@ -68,6 +69,8 @@ if __name__ == "__main__":
 
     elif userChoice == 2:
         db = Database()
+        selected_collection = db.select_collection()
+        raw_data = db.retrieve_raw_data(selected_collection)
 
 
 
@@ -114,7 +117,6 @@ if __name__ == "__main__":
         print(f'You have data for {len(current_data)} days:', current_data)
 
     elif userChoice == 6:
-        # dates = interval_to_scrape('20141122')
         db = Database()
         selected_collection = db.select_collection()
         warnings = db.find_missing_data(selected_collection)
@@ -125,4 +127,4 @@ if __name__ == "__main__":
         quit()
 
     else:
-        print("\n\nOops! That is not a valid number. Please try a number between 1-6 to proceed:\n")
+        print("\n\nOops! That is not a valid number. Please try a number between 1-7 to proceed:\n")

@@ -39,7 +39,7 @@ class Database(object):
         """
 
         print(f'Available databases: {sorted(self._client.list_database_names())}.')
-        print('Please, write the one you are interested in:')
+        print('Write the one you are interested in or write a new one in case you want to create it from scratch:')
         db_prov = []
 
         while True:
@@ -205,10 +205,10 @@ class Database(object):
 
         """
 
-        print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
-        print("If you'd like to update your database, write: 'UPDATE'.")
-        print("To collect data for a specific interval write: 'INTERVAL'.")
-        print("To update ONLY a CONCRETE period, write: CONCRETE.")
+        print("\nIf you'd like to store all the available data into your DB, write: 'ORIGIN'.")
+        print("If you'd like to update your DB, write: 'UPDATE'.")
+        print("To store data for a specific interval write: 'INTERVAL'.")
+        print("To store ONLY a CONCRETE period, write: CONCRETE.")
 
         available_options = ['origin', 'update', 'interval', 'concrete']
 
@@ -235,7 +235,7 @@ class Database(object):
             for date in tqdm(interval_to_update[:-1]):
                 print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
-                self.update_database(date, data, selected_collection)
+                self.push_data_into_db(date, data, selected_collection)
 
         elif interval == 'update':
             print(f'You have chosen UPDATE, so we are going to collect data since your last day recorded.')
@@ -253,7 +253,7 @@ class Database(object):
             for date in tqdm(interval_to_update[1:-1]):
                 print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
-                self.update_database(date, data, selected_collection)
+                self.push_data_into_db(date, data, selected_collection)
 
         elif interval == 'interval':
             print(f'You have chosen INTERVAL, so we are going to collect data between two dates.'
@@ -280,7 +280,7 @@ class Database(object):
             for date in tqdm(interval_to_update[:]):
                 print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
-                self.update_database(date, data, selected_collection)
+                self.push_data_into_db(date, data, selected_collection)
 
         elif interval == 'concrete':
             print(f'You have chosen CONCRETE, so we are going to collect data for that specific date'
@@ -305,10 +305,10 @@ class Database(object):
         for date in tqdm(interval_to_update):
             print(f'{date} is being processed...')
             data = data_scraper(date, self.collection_name)
-            self.update_database(date, data, selected_collection)
+            self.push_data_into_db(date, data, selected_collection)
 
     @staticmethod
-    def update_database(date, available_data, db_collection):
+    def push_data_into_db(date, available_data, db_collection):
         """
         Inserts scraped data into our selected collection and database.
 
@@ -325,6 +325,7 @@ class Database(object):
 
         """
         # Converting scraped data into a format required for inserting data into mongodb
+        available_data = available_data[[col for col in available_data.columns if col != 'symbol']]
         available_data = available_data.to_dict(orient='records')
         try:
             db_collection.insert_many(available_data)
@@ -370,6 +371,17 @@ class Database(object):
         dates = selected_collection.find({}, {'_id': 0, 'timestamp': 1})
         actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
         return actual_dates
+
+    def retrieve_raw_data(self, selected_collection):
+        dates = selected_collection.find({}, {'_id': 0, 'symbol': 0})
+
+        return None
+
+
+
+
+
+
 
 
 #
