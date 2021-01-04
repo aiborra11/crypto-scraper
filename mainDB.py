@@ -68,10 +68,12 @@ if __name__ == "__main__":
         data = db.populate_collection(selected_collection)
 
     elif userChoice == 2:
-        db = Database()
+        # db = Database()
+        # selected_collection = db.select_collection()
+        # raw_data = db.retrieve_raw_data(selected_collection)
+        db = CsvGenerator()
         selected_collection = db.select_collection()
-        raw_data = db.retrieve_raw_data(selected_collection)
-
+        db.retrieve_raw_data(selected_collection)
 
 
 

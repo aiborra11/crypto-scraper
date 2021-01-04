@@ -45,10 +45,11 @@ class Database(object):
         while True:
             try:
                 self.db_name = str(input()).lower()
+                db_prov.append(self.db_name)
             except ValueError:
                 print("Sorry, I didn't understand that. Please, try again")
                 continue
-            if self.db_name == 'yes':
+            if self.db_name.lower() == 'yes':
                 break
             elif self.db_name in self._client.list_database_names():
                 break
@@ -64,11 +65,15 @@ class Database(object):
             print(f'Connecting to {self.db_name}...')
             return self._client[self.db_name]
 
-        elif self.db_name == 'yes':
+        elif self.db_name.lower() == 'yes':
             # Assigning the previous value to the db_name
-            self.db_name = str(db_prov[-1])
+            self.db_name = str(db_prov[-2])
             print(f'Creating and connecting to {self.db_name}...')
             return self._client[self.db_name]
+
+        else:
+            print('something went wrong!')
+            quit()
 
     def select_collection(self):
         """
@@ -106,7 +111,6 @@ class Database(object):
                 else:
                     break
 
-
             # If we had the collection stored already
             if self.collection_name in available_data:
                 print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
@@ -116,7 +120,7 @@ class Database(object):
             else:
                 self.databaseName.create_collection(str(self.collection_name))
                 print(
-                    f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
+                    f"You've been connected into your {self.db_name} DB and logged into {self.collection_name} data")
                 return self.databaseName[self.collection_name]
 
         # Our db is totally empty
@@ -130,7 +134,17 @@ class Database(object):
                   cryptos['symbol'].unique())
 
             # Selecting the name of the collection we are going to generate inside our new db
-            self.collection_name = str(input()).upper()
+            while True:
+                try:
+                    self.collection_name = str(input()).upper()
+                except ValueError:
+                    print("Sorry, I didn't understand that.")
+                    continue
+                if self.collection_name not in cryptos['symbol'].unique():
+                    print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
+                    continue
+                else:
+                    break
             self.databaseName.create_collection(str(self.collection_name))
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
             return self.databaseName[self.collection_name]
@@ -372,10 +386,7 @@ class Database(object):
         actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
         return actual_dates
 
-    def retrieve_raw_data(self, selected_collection):
-        dates = selected_collection.find({}, {'_id': 0, 'symbol': 0})
 
-        return None
 
 
 
