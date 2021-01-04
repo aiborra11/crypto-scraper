@@ -1,5 +1,5 @@
 # from source.crypto_scraper_db import data_scraper
-from source.crypto_scraper_csv import interval_to_scrape
+# from source.crypto_scraper_csv import interval_to_scrape
 from source.database import Database
 
 # from database import Database
@@ -56,7 +56,7 @@ if __name__ == "__main__":
             print("Sorry, I didn't understand that.")
             continue
         if userChoice not in available_options:
-            print("Sorry, I didn't understand that.")
+            print("Sorry, I didn't understand that. Choose a number between 1 and 7")
             continue
         else:
             break
@@ -68,11 +68,15 @@ if __name__ == "__main__":
 
     elif userChoice == 2:
         db = Database()
-        rawData = db.populate_collection()[0]
-        for raw in tqdm(rawData):
-            df_raw = pd.DataFrame(Database.COLLECTION[raw].find({}))
-            print('Preparing your RAW data for: ', raw)
-            df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
+
+
+
+
+        # rawData = db.populate_collection()[0]
+        # for raw in tqdm(rawData):
+        #     df_raw = pd.DataFrame(Database.COLLECTION[raw].find({}))
+        #     print('Preparing your RAW data for: ', raw)
+        #     df_raw.to_csv(f'data.nosync/RAW_{raw}.gz', compression='gzip')
 
     elif userChoice == 3:
         db = Database()
@@ -105,7 +109,9 @@ if __name__ == "__main__":
 
     elif userChoice == 5:
         db = Database()
-        currData = db.show_available_collections()
+        selected_collection = db.select_collection()
+        current_data = db.show_stored_dates(selected_collection)
+        print(f'You have data for {len(current_data)} days:', current_data)
 
     elif userChoice == 6:
         # dates = interval_to_scrape('20141122')
