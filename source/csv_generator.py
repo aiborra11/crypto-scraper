@@ -1,10 +1,8 @@
 import pandas as pd
-from pymongo import MongoClient
+
 from datetime import datetime, timedelta
 
-
 from source.database import Database
-
 
 
 class CsvGenerator(Database):
@@ -48,6 +46,7 @@ class CsvGenerator(Database):
                     coll_prov.append(self.collection_name)
                     continue
 
+            # In case we already have data stored into our db
             if self.collection_name in self.show_available_collections():
                 # LO MISMO QUE METEMOS AQUI, excepto el raw_df, LO METEMOS EN EL ELSE DE BAJO    TODO
                 print(f'Charging your raw dataset for {self.collection_name}...')
@@ -56,10 +55,13 @@ class CsvGenerator(Database):
                 print(raw_df)
                 return raw_df
 
+            # Populating db before retrieving raw data
             elif self.collection_name.lower() == 'yes':
-                print(coll_prov)
                 selected_collection = self.databaseName[str(coll_prov[-2])]
-                data = self.populate_collection(selected_collection)
+                self.collection_name = str(coll_prov[-2])
+                self.populate_collection(selected_collection)
+                raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
+                return raw_df
 
             else:
                 print('something went wrong!')
@@ -68,7 +70,7 @@ class CsvGenerator(Database):
         else:
             print(f'Charging your raw dataset for {self.collection_name}...')
             print(raw_df)
-        return raw_df
+            return raw_df
 
 
 

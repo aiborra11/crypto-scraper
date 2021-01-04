@@ -242,7 +242,7 @@ class Database(object):
             print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning: 20141122.')
 
             # Generating a list containing the dates we are going to scrape
-            interval_to_update = sorted(interval_to_scrape(day1='20200101', max_date=''))
+            interval_to_update = sorted(interval_to_scrape(day1='20141121', max_date=''))
             print('Updating interval: ', interval_to_update)
 
             # Scraping data from bitmex and inserting it into our collection
