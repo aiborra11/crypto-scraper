@@ -37,7 +37,7 @@ class ProcessData(object):
 
         """
         self.df = self.df[self.df['timestamp'].notna()]
-        self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
+        self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
             lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
 
@@ -57,7 +57,6 @@ class ProcessData(object):
                 Containing all the scraped and stored data for the selected dates and cryptocurrency.
 
         """
-        # print('Cleaning columns we no longer need...')
         columns_delete = columns_list
         self.dataClean = self.noDuplicates[[col for col in self.noDuplicates.columns if col not in columns_delete]] \
             .rename(columns={'foreignNotional': 'usdTotal', 'homeNotional': 'btcTotal'})
@@ -80,14 +79,13 @@ class ProcessData(object):
                 modified to evaluate if the transaction was a short or a long.
 
         """
-        # print('Converting shorts into negative and longs into positives...')
-
         filter_sell = self.dataClean['side'] == 'Sell'
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
 
         return self.dataClean
+
 
     def sum_grouper(self, cols):
         """
@@ -129,7 +127,6 @@ class ProcessData(object):
 
         """
 
-        # print('Calculating the total number of transactions...')
         transactions = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency), self.battle['side'] == 'Buy'])
                                     [cols].count()).unstack('side').shift(1, freq=self.frequency)
 
@@ -157,8 +154,6 @@ class ProcessData(object):
 
 
         """
-
-        # print('Calculating the smoothed price...')
         for t in self.dataTransact['totalTransact'].values:
             exp_mov_avg = self.battle.ewm(span=t, adjust=False).mean()
 
@@ -243,7 +238,6 @@ class ProcessData(object):
             final['Open'] = final['Open'].fillna(final.Close)
             final = final.fillna(0)
             print(f'Your dataframe has {len(all_data)} rows in total.')
-
             return final.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
 
         else:
@@ -257,7 +251,6 @@ class ProcessData(object):
             all_data['Open'] = all_data['Open'].fillna(all_data.Close)
             all_data = all_data.fillna(0)
             print(f'Your dataframe has {len(all_data)} rows in total.')
-
             return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
 
 
