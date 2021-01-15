@@ -21,7 +21,7 @@ class Database(object):
         Connection to your localhost and database.
         """
         self._client = MongoClient('localhost', 27017)
-        self.databaseName = self.select_database()
+        self.database_name = self.select_database()
 
     def select_database(self):
         """
@@ -37,8 +37,10 @@ class Database(object):
             Access to the written database.
 
         """
-
-        print(f'Available databases: {sorted(self._client.list_database_names())}.')
+        self._client = MongoClient('localhost', 27017)
+        available_dbs = self._client.list_database_names()
+        available_dbs_raw_data = [x for x in available_dbs if x.split('_')[-1] != 'processed']
+        print(f'Available databases: {sorted(available_dbs_raw_data)}.')
         print('Write the one you are interested in or write a new one in case you want to create it from scratch:')
         db_prov = []
 
@@ -114,14 +116,14 @@ class Database(object):
             # If we had the collection stored already
             if self.collection_name in available_data:
                 print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
-                return self.databaseName[self.collection_name]
+                return self.database_name[self.collection_name]
 
             # To generate a new collection storing a new crypto
             else:
-                self.databaseName.create_collection(str(self.collection_name))
+                self.database_name.create_collection(str(self.collection_name))
                 print(
                     f"You've been connected into your {self.db_name} DB and logged into {self.collection_name} data")
-                return self.databaseName[self.collection_name]
+                return self.database_name[self.collection_name]
 
         # Our db is totally empty
         else:
@@ -145,9 +147,9 @@ class Database(object):
                     continue
                 else:
                     break
-            self.databaseName.create_collection(str(self.collection_name))
+            self.database_name.create_collection(str(self.collection_name))
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
-            return self.databaseName[self.collection_name]
+            return self.database_name[self.collection_name]
 
     def remove_collection(self, collection=''):
         """
@@ -164,7 +166,7 @@ class Database(object):
 
         """
         if collection:
-            self.databaseName[collection].drop()
+            self.database_name[collection].drop()
             print(f'The database {collection} has been deleted successfully!')
 
         else:
@@ -175,17 +177,17 @@ class Database(object):
             if collections == 'all':
                 print('We are preparing all available collections: ', collections)
                 for collection in tqdm(self.show_available_collections()):
-                    self.databaseName[collection].drop()
+                    self.database_name[collection].drop()
 
             elif len(collections) > 1:
                 collections_date = collections.replace(',', '').replace("'", '').split(' ')
                 print("We are deleting the collections you've selected: ", collections_date)
                 for collection in tqdm(sorted(collections_date)):
-                    self.databaseName[collection].drop()
+                    self.database_name[collection].drop()
 
             else:
                 print("We are deleting the collection you've selected: ", collections)
-                self.databaseName[collections].drop()
+                self.database_name[collections].drop()
 
     def show_available_collections(self):
         """
@@ -198,7 +200,7 @@ class Database(object):
          --------
         Our stored collections in the db we have connected
         """
-        available_data = sorted(self.databaseName.list_collection_names())
+        available_data = sorted(self.database_name.list_collection_names())
         return available_data
 
     def populate_collection(self, selected_collection):
@@ -249,7 +251,7 @@ class Database(object):
             for date in tqdm(interval_to_update[:-1]):
                 # print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
-                self.push_data_into_db(date, data, selected_collection)
+                self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'update':
             print(f'You have chosen UPDATE, so we are going to collect data since your last day recorded.')
@@ -267,7 +269,7 @@ class Database(object):
             for date in tqdm(interval_to_update[1:-1]):
                 # print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
-                self.push_data_into_db(date, data, selected_collection)
+                self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'interval':
             print(f'You have chosen INTERVAL, so we are going to collect data between two dates.'
@@ -294,7 +296,7 @@ class Database(object):
             for date in tqdm(interval_to_update[:]):
                 # print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
-                self.push_data_into_db(date, data, selected_collection)
+                self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'concrete':
             print(f'You have chosen CONCRETE, so we are going to collect data for that specific date'
@@ -319,10 +321,10 @@ class Database(object):
         for date in tqdm(interval_to_update):
             # print(f'{date} is being processed...')
             data = data_scraper(date, self.collection_name)
-            self.push_data_into_db(date, data, selected_collection)
+            self.push_data_into_db(data, selected_collection, date)
 
     @staticmethod
-    def push_data_into_db(date, available_data, db_collection):
+    def push_data_into_db(available_data, db_collection, processed=False, date=''):
         """
         Inserts scraped data into our selected collection and database.
 
@@ -338,15 +340,23 @@ class Database(object):
                 Including new data for the selected cryptocurrency
 
         """
-        # Converting scraped data into a format required for inserting data into mongodb
-        available_data = available_data[[col for col in available_data.columns if col != 'symbol']]
-        available_data = available_data.to_dict(orient='records')
-        try:
-            db_collection.insert_many(available_data)
-            # print(f'Your new collection for the date {date}, has been created successfully')
 
-        except:
-            print(f'There is no available data for the date: ', date)
+        if processed:
+            print(f'Pushing processed data into your collection')
+            available_data = available_data.to_dict(orient='records')
+            db_collection.insert_many(available_data)
+
+        else:
+            # Converting scraped data into a format required for inserting data into mongodb
+            available_data = available_data[[col for col in available_data.columns if col != 'symbol']]
+            available_data = available_data.to_dict(orient='records')
+            try:
+                db_collection.insert_many(available_data)
+
+            except:
+                print(f'There is no available data for the date: ', date)
+
+
 
     def find_missing_data(self, selected_collection):
         """
@@ -445,13 +455,13 @@ class Database(object):
             # In case we already have data stored into our db
             if self.collection_name in self.show_available_collections():
                 print(f'Charging your raw dataset for {self.collection_name}...')
-                selected_collection = self.databaseName[str(self.collection_name)]
+                selected_collection = self.database_name[str(self.collection_name)]
                 raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
                 return raw_df, self.collection_name
 
             # Populating db before retrieving raw data
             elif self.collection_name.lower() == 'yes':
-                selected_collection = self.databaseName[str(coll_prov[-2])]
+                selected_collection = self.database_name[str(coll_prov[-2])]
                 self.collection_name = str(coll_prov[-2])
                 self.populate_collection(selected_collection)
                 raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
@@ -465,6 +475,60 @@ class Database(object):
             print(f'Charging your raw dataset for {self.collection_name}...')
             return raw_df, self.collection_name
 
+    def store_processed_data(self, frequency, processed_data):
+        self._client = MongoClient('localhost', 27017)
+        self.db_name = 'processed_cryptos'
+        existing_processed_db = self._client.list_database_names()
+
+
+        if self.db_name in existing_processed_db:
+            print('Here!!!')
+            self.database_name = self._client[self.db_name]
+            new_collection = self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_processed')
+            existing_processed_data = self.show_available_collections()
+
+            # Filtering by processed data and by the selected timeframe and currency
+            existing_processed_data_timeframe = [x for x in existing_processed_data if x.split('_')[-1] == 'processed'
+                                                 and x.split('_')[0].lower() == frequency.lower() and x.split('_')[1]
+                                                 == self.select_collection()]
+            if existing_processed_data_timeframe:
+                # Update collection
+                print(f'You have existing processed data for {self.collection_name.upper()} and {frequency} timeframe')
+                self.push_data_into_db(processed_data, new_collection, processed=True)
+                pass
+            else:
+                # Create a new collection
+                self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_processed')
+
+                pass
+        else:
+            self.database_name = self._client[self.db_name]
+            new_collection = self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_processed')
+            self.push_data_into_db(processed_data, new_collection, processed=True)
+
+            print('existing_processed_data', self.show_available_collections())
+
+        # print(f'Available databases storing processed data for {frequency} timeframe {self.select_collection()}:'
+        #       f' {sorted(available_dbs_processed_data)}.')
+
+        # available_data = self.show_available_collections()
+        #
+        # print(f'Checking if there is existing processed data for {frequency} timeframe and for {self.select_collection()}.')
+        # # self.database_name = self.select_database()
+        # # self.selected_collection = self.select_collection().upper()
+        #
+        # # If we had the collection stored already
+        # if self.selected_collection in available_data:
+        #     print(f"You've been connected into your {self.db_name} database and logged into "
+        #           f"{self.selected_collection} data")
+        #     return self.database_name[self.selected_collection]
+        #
+        # # To generate a new collection storing a new processed crypto
+        # else:
+        #     self.database_name.create_collection(str(f'{(self.selected_collection)}_processed'))
+        #     print(
+        #         f"You've been connected into your {self.db_name} DB and logged into {self.selected_collection} data")
+        #     return self.database_name[self.selected_collection]
 
 
 

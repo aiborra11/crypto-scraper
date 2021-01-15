@@ -98,9 +98,13 @@ if __name__ == "__main__":
                                                           'ContractsTraded_grossValue']).fillna(0)
         processed_transactions = initial_data.counter_grouper(cols=['side']).fillna(0)
         processed_ohcl = initial_data.ohcl()
-        processed_features = pd.concat([processed_totals, processed_transactions, processed_ohcl], axis=1).reset_index()
-
+        processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
+        print(processed_data)
         if store_place == 'database':
+            available_data = initial_data.store_processed_data(frequency, processed_data)
+
+
+
             pass
         elif store_place == 'csv':
             pass
