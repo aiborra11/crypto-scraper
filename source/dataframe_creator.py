@@ -21,7 +21,7 @@ class ProcessData(Database):
         # Bringing raw data from the mongoDB
         super().__init__()
         selected_collection = self.select_collection()
-        self.df = self.collect_raw_data(selected_collection)
+        self.df = self.collect_raw_data(selected_collection)[0]
 
         # Essential data preprocessing (cleaning and summarizing features into less columns)
         self.noDuplicates = self.duplicates_remover()
@@ -47,7 +47,7 @@ class ProcessData(Database):
         self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
             lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
-
+        print(f'{len(self.df) - len(self.noDuplicates)} duplicates have been removed from your dataframe.')
         return self.noDuplicates
 
     def data_cleaner(self, columns_list):
@@ -90,7 +90,6 @@ class ProcessData(Database):
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
-
         return self.dataClean
 
 

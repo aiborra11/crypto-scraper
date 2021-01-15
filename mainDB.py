@@ -77,14 +77,38 @@ if __name__ == "__main__":
               f'Check your data folder!')
 
     elif userChoice == 3:
+        print('Do you want to store this dataframe into a Database or as a CSV file?')
+        while True:
+            try:
+                store_place = str(input()).lower()
+            except ValueError:
+                print("Sorry, that is not a valid input. Write CSV or DATABASE.")
+            if store_place == 'csv':
+                break
+            elif store_place == 'database':
+                break
+            else:
+                print("Sorry, I didn't understand that. Please, choose between CSV or DATABASE.")
+                continue
 
         frequency = '1H'
-        db = ProcessData(frequency)
-        # selected_collection = db.select_collection()
-        # raw_data = db.collect_raw_data(selected_collection)
-        # print(raw_data)
+        initial_data = ProcessData(frequency)
+        processed_totals = initial_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal',
+                                                          'usdTotal', 'ContractsTraded_size',
+                                                          'ContractsTraded_grossValue']).fillna(0)
+        processed_transactions = initial_data.counter_grouper(cols=['side']).fillna(0)
+        processed_ohcl = initial_data.ohcl()
+        processed_features = pd.concat([processed_totals, processed_transactions, processed_ohcl], axis=1).reset_index()
 
-        processed_data = db.csv_processed_data()
+        if store_place == 'database':
+            pass
+        elif store_place == 'csv':
+            pass
+        else:
+            print('Something went wrong, please try again!')
+
+
+
         # TODO: Push processed data into db + pull processed data as csv
 
 
