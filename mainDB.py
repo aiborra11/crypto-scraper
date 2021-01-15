@@ -47,7 +47,7 @@ if __name__ == "__main__":
         print('Enter 2 if you want to collect RAW data as a csv file:')
         print('Enter 3 if you want to collect PROCESSED data as a csv file:')
         print('Enter 4 if you want to DELETE a collection from your database:')
-        print('Enter 5 if you want to check the current available collections in your database:')
+        print('Enter 5 if you want to check your stored data for a specific cryptocurrency:')
         print('Enter 6 to check date warnings:')
         print('Enter 7 to exit:')
         available_options = [1, 2, 3, 4, 5, 6, 7]
@@ -74,16 +74,19 @@ if __name__ == "__main__":
         raw_data = db.collect_raw_data(selected_collection)
         raw_data[0].to_csv(f'data.nosync/RAW_{raw_data[1]}.gz', compression='gzip')
         print(f'Your csv file containing data for {raw_data[1]} has been created successfully. '
-              f'Check your data.nosync folder!')
+              f'Check your data folder!')
 
     elif userChoice == 3:
-        db = Database()
-        selected_collection = db.select_collection()
-        raw_data = db.collect_raw_data(selected_collection)
 
         frequency = '1H'
-        processed_data = ProcessData(raw_data[0], frequency).create_dataframe()
-        # processed_data = processed_data.csv_processed_data()
+        db = ProcessData(frequency)
+        # selected_collection = db.select_collection()
+        # raw_data = db.collect_raw_data(selected_collection)
+        # print(raw_data)
+
+        processed_data = db.csv_processed_data()
+        # TODO: Push processed data into db + pull processed data as csv
+
 
 
 

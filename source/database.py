@@ -247,7 +247,7 @@ class Database(object):
 
             # Scraping data from bitmex and inserting it into our collection
             for date in tqdm(interval_to_update[:-1]):
-                print(f'{date} is being processed...')
+                # print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
                 self.push_data_into_db(date, data, selected_collection)
 
@@ -265,7 +265,7 @@ class Database(object):
 
             # Scraping data from bitmex and inserting it into our collection
             for date in tqdm(interval_to_update[1:-1]):
-                print(f'{date} is being processed...')
+                # print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
                 self.push_data_into_db(date, data, selected_collection)
 
@@ -292,7 +292,7 @@ class Database(object):
 
             # Scraping data from bitmex and inserting it into our collection
             for date in tqdm(interval_to_update[:]):
-                print(f'{date} is being processed...')
+                # print(f'{date} is being processed...')
                 data = data_scraper(date, self.collection_name)
                 self.push_data_into_db(date, data, selected_collection)
 
@@ -317,7 +317,7 @@ class Database(object):
 
         # Scraping data from bitmex and inserting it into our collection
         for date in tqdm(interval_to_update):
-            print(f'{date} is being processed...')
+            # print(f'{date} is being processed...')
             data = data_scraper(date, self.collection_name)
             self.push_data_into_db(date, data, selected_collection)
 
@@ -343,7 +343,7 @@ class Database(object):
         available_data = available_data.to_dict(orient='records')
         try:
             db_collection.insert_many(available_data)
-            print(f'Your new collection for the date {date}, has been created successfully')
+            # print(f'Your new collection for the date {date}, has been created successfully')
 
         except:
             print(f'There is no available data for the date: ', date)
@@ -380,6 +380,18 @@ class Database(object):
         return sorted(list(missing_dates))
 
     def show_stored_dates(self, selected_collection):
+        """
+        Brings all unique timestamp data for the specified cryptocurrencies.
+
+        Arguments:
+        ----------
+        selected_collection {[str]} --  client connected to our db and collection
+
+        Returns:
+        --------
+            Dates with available data
+
+        """
         # Filtering by timestamp is the only datapoint we actually need
         print('Checking your current stored data...')
         dates = selected_collection.find({}, {'_id': 0, 'timestamp': 1})

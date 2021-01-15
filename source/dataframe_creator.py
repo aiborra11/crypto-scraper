@@ -3,20 +3,27 @@ import numpy as np
 
 from datetime import datetime
 from os import listdir
+from .database import Database
 
 
-class ProcessData(object):
+class ProcessData(Database):
     """
-    Converts raw data into a determined frequency and creates new features as columns.
+    Inherits Database class to bring raw data and transform it using its own methods.
 
     """
 
-    def __init__(self, df, frequency):
+    def __init__(self, frequency):
         """
-        Allowing different functions to inherit from each other.
+        Executing essential functions: connecting to mongo, selecting db and collection, and bringing raw data to
+        transform.
 
         """
-        self.df = df
+        # Bringing raw data from the mongoDB
+        super().__init__()
+        selected_collection = self.select_collection()
+        self.df = self.collect_raw_data(selected_collection)
+
+        # Essential data preprocessing (cleaning and summarizing features into less columns)
         self.noDuplicates = self.duplicates_remover()
         self.dataClean = self.data_cleaner(['', 'symbol', 'trdMatchID'])
         self.battle = self.bulls_vs_bears(['size', 'grossValue'])
@@ -85,6 +92,8 @@ class ProcessData(object):
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
 
         return self.dataClean
+
+
 
 
     def sum_grouper(self, cols):
