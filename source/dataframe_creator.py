@@ -12,14 +12,14 @@ class ProcessData(Database):
 
     """
 
-    def __init__(self, frequency):
+    def __init__(self, frequency, processed=True):
         """
         Executing essential functions: connecting to mongo, selecting db and collection, and bringing raw data to
         transform.
 
         """
         # Bringing raw data from the mongoDB
-        super().__init__()
+        super().__init__(processed)
         selected_collection = self.select_collection()
         self.df = self.collect_raw_data(selected_collection)[0]
 
@@ -86,14 +86,14 @@ class ProcessData(Database):
                 modified to evaluate if the transaction was a short or a long.
 
         """
+        print(self.df.columns)
+
+        print(self.dataClean.columns)
         filter_sell = self.dataClean['side'] == 'Sell'
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
         return self.dataClean
-
-
-
 
     def sum_grouper(self, cols):
         """

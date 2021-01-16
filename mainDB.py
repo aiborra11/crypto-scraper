@@ -77,7 +77,7 @@ if __name__ == "__main__":
               f'Check your data folder!')
 
     elif userChoice == 3:
-        print('Do you want to store this dataframe into a Database or as a CSV file?')
+        print('Do you want to store this dataframe into a Database, into a CSV file or BOTH?')
         while True:
             try:
                 store_place = str(input()).lower()
@@ -92,28 +92,33 @@ if __name__ == "__main__":
                 continue
 
         frequency = '1H'
-        initial_data = ProcessData(frequency)
+        print('1------')
+        initial_data = ProcessData(frequency, processed=True)
+        print('2------')
+
         processed_totals = initial_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal',
                                                           'usdTotal', 'ContractsTraded_size',
                                                           'ContractsTraded_grossValue']).fillna(0)
+        print('3------')
+
         processed_transactions = initial_data.counter_grouper(cols=['side']).fillna(0)
         processed_ohcl = initial_data.ohcl()
         processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
         print(processed_data)
         if store_place == 'database':
-            available_data = initial_data.store_processed_data(frequency, processed_data)
-
-
-
+            available_data = initial_data.store_processed_data(frequency, processed_data, processed=True)
             pass
         elif store_place == 'csv':
+            pass
+
+        elif store_place == 'both':
+            available_data = initial_data.store_processed_data(frequency, processed_data)
             pass
         else:
             print('Something went wrong, please try again!')
 
 
 
-        # TODO: Push processed data into db + pull processed data as csv
 
 
 

@@ -16,21 +16,21 @@ class Database(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, processed=False, frequency=''):
         """
         Connection to your localhost and database.
         """
         self._client = MongoClient('localhost', 27017)
-        self.database_name = self.select_database()
+        self.database_name, self.processed = self.select_database(processed)
 
-    def select_database(self):
+    def select_database(self, processed=False):
         """
         Shows a list of your existing databases and connects us to the one we are interested in.
         It also allows us to create a new one in case we need it.
 
         Arguments:
         ----------
-        ()
+        processed {[bool]} -- Flag indicating if the data is processed or raw.
 
         Returns:
         --------
@@ -39,45 +39,120 @@ class Database(object):
         """
         self._client = MongoClient('localhost', 27017)
         available_dbs = self._client.list_database_names()
-        available_dbs_raw_data = [x for x in available_dbs if x.split('_')[-1] != 'processed']
-        print(f'Available databases: {sorted(available_dbs_raw_data)}.')
-        print('Write the one you are interested in or write a new one in case you want to create it from scratch:')
-        db_prov = []
+        interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
+        cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
+                              f'{interval}.csv.gz')
+        if processed:
+            available_dbs_processed_data = [x for x in available_dbs if x.split('_')[0] == 'processed']
+            print(f'Available databases containing PROCESSED data: {sorted(available_dbs_processed_data)}.')
+            print('Write the one you are interested in or write a new one in case you want to create it from scratch:\n',
+                  cryptos['symbol'].unique())
+            db_prov = []
+            while True:
+                try:
+                    self.db_name = str(input()).lower()
+                    db_prov.append(self.db_name)
+                except ValueError:
+                    print("Sorry, I didn't understand that. Please, try again")
+                    continue
+                if self.db_name.lower() == 'yes':
+                    break
+                elif self.db_name in self._client.list_database_names():
+                    break
+                else:
+                    print(f'Sorry, we do not have any database named: {self.db_name}. '
+                          f'\nWrite "yes" if you would like to create a new one. '
+                          f'Otherwise, re-write the name of the database you would like create/access.')
+                    # In case we write yes, we will need to get the previous value to name the db. Otherwise name = yes
+                    db_prov.append(self.db_name)
+                    continue
 
-        while True:
-            try:
-                self.db_name = str(input()).lower()
-                db_prov.append(self.db_name)
-            except ValueError:
-                print("Sorry, I didn't understand that. Please, try again")
-                continue
-            if self.db_name.lower() == 'yes':
-                break
-            elif self.db_name in self._client.list_database_names():
-                break
+            if self.db_name in self._client.list_database_names():
+                print(f'Connecting to {self.db_name}...')
+                return self._client[self.db_name]
+
+            elif self.db_name.lower() == 'yes':
+                # Assigning the previous value to the db_name
+                self.db_name = str(db_prov[-2])
+                print(f'Creating and connecting to {self.db_name}...')
+                return self._client[self.db_name]
+
             else:
-                print(f'Sorry, we do not have any database named: {self.db_name}. '
-                      f'\nWrite "yes" if you would like to create a new one. '
-                      f'Otherwise, re-write the name of the database you would like create/access.')
-                # In case we write yes, we will need to get the previous value to name the db. Otherwise name = yes
-                db_prov.append(self.db_name)
-                continue
-
-        if self.db_name in self._client.list_database_names():
-            print(f'Connecting to {self.db_name}...')
-            return self._client[self.db_name]
-
-        elif self.db_name.lower() == 'yes':
-            # Assigning the previous value to the db_name
-            self.db_name = str(db_prov[-2])
-            print(f'Creating and connecting to {self.db_name}...')
-            return self._client[self.db_name]
-
+                print('something went wrong!')
+                quit()
         else:
-            print('something went wrong!')
-            quit()
+            print('What do you need? PROCESSED or RAW data?')
+            while True:
+                try:
+                    data_type = str(input()).lower()
+                except ValueError:
+                    print("Sorry, I didn't understand that. Please, try again")
+                if data_type == 'processed':
+                    break
+                elif data_type == 'raw':
+                    break
+                else:
+                    print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
 
-    def select_collection(self):
+            if data_type == 'processed':
+                available_dbs_processed_data = [x for x in available_dbs if x.split('_')[0] == 'processed']
+                if available_dbs_processed_data:
+                    print(f'Available databases containing PROCESSED data: {sorted(available_dbs_processed_data)}.')
+                    print(
+                        'Write the one you are interested in or write a new name for the DB in case you want to create '
+                        'it from scratch:')
+                else:
+                    print('You do not have any existing DB storing PROCESSED data. Write a new name to create it from'
+                          ' scratch:')
+                processed = True
+
+            else:
+                available_dbs_raw_data = [x for x in available_dbs if x.split('_')[0] == 'raw']
+                if available_dbs_raw_data:
+                    print(f'Available databases containing RAW data: {sorted(available_dbs_raw_data)}.')
+                    print(
+                        'Write the one you are interested in or write a new name for the DB in case you want to create '
+                        'it from scratch:')
+                else:
+                    print('You do not have any existing DB storing RAW data. Write a new name to create it from'
+                          ' scratch:')
+                processed = False
+
+            db_prov = []
+            while True:
+                try:
+                    self.db_name = str(input()).lower()
+                    db_prov.append(self.db_name)
+                except ValueError:
+                    print("Sorry, I didn't understand that. Please, try again")
+                    continue
+                if self.db_name.lower() == 'yes':
+                    break
+                elif self.db_name in self._client.list_database_names():
+                    break
+                else:
+                    print(f'Sorry, we do not have any database named: {self.db_name}. '
+                          f'\nWrite "yes" if you would like to create a new one. '
+                          f'Otherwise, re-write the name of the database you would like create/access.')
+                    # In case we write yes, we will need to get the previous value to name the db. Otherwise name = yes
+                    db_prov.append(self.db_name)
+                    continue
+
+            if self.db_name in self._client.list_database_names():
+                print(f'Connecting to {self.db_name}...')
+                return self._client[self.db_name], processed
+
+            elif self.db_name.lower() == 'yes':
+                # Assigning the previous value to the db_name
+                self.db_name = str(db_prov[-2])
+                print(f'Creating and connecting to {self.db_name}...')
+                return self._client[self.db_name], processed
+
+            else:
+                print('something went wrong!')
+                quit()
+
+    def select_collection(self, processed=False, frequency=''):
         """
         Shows a list of your existing collections and connects us to the one we are interested in.
         It also allows us to create a new one in case we need it.
@@ -99,17 +174,22 @@ class Database(object):
             cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                                   f'{interval}.csv.gz')
             print(f'These are your current stored collections inside your "{self.db_name}" database:', available_data)
-            print('Select the one you are willing to connect or write a new one if you want to create it:\n', cryptos['symbol'].unique())
+            print('Select the one you are willing to connect or write a new one if you want to create it:\n',
+                  cryptos['symbol'].unique())
 
             while True:
                 try:
                     self.collection_name = str(input()).upper()
+                    print('---~', self.collection_name)
                 except ValueError:
                     print("Sorry, I didn't understand that.")
                     continue
-                if self.collection_name not in cryptos['symbol'].unique():
+                if self.collection_name in available_data:
+                    break
+                elif self.collection_name not in cryptos['symbol'].unique():
                     print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
                     continue
+
                 else:
                     break
 
@@ -147,9 +227,27 @@ class Database(object):
                     continue
                 else:
                     break
-            self.database_name.create_collection(str(self.collection_name))
-            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
-            return self.database_name[self.collection_name]
+
+            if self.processed:
+                # We need a timeframe to get processed data
+                print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
+                while True:
+                    try:
+                        frequency = str(input()).replace(' ', '')
+                    except ValueError:
+                        print("Sorry, I didn't understand that.")
+                        continue
+                    else:
+                        break
+
+                self.database_name.create_collection(f'{frequency}_{self.collection_name}_PROCESSED')
+                print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
+                return self.database_name[self.collection_name]
+
+            else:
+                self.database_name.create_collection(str(self.collection_name))
+                print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} data")
+                return self.database_name[self.collection_name]
 
     def remove_collection(self, collection=''):
         """
@@ -247,11 +345,11 @@ class Database(object):
             interval_to_update = sorted(interval_to_scrape(day1='20141121', max_date=''))
             print('Updating interval: ', interval_to_update)
 
-            # Scraping data from bitmex and inserting it into our collection
-            for date in tqdm(interval_to_update[:-1]):
-                # print(f'{date} is being processed...')
-                data = data_scraper(date, self.collection_name)
-                self.push_data_into_db(data, selected_collection, date)
+            # # Scraping data from bitmex and inserting it into our collection
+            # for date in tqdm(interval_to_update[:-1]):
+            #     # print(f'{date} is being processed...')
+            #     data = data_scraper(date, self.collection_name)
+            #     return self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'update':
             print(f'You have chosen UPDATE, so we are going to collect data since your last day recorded.')
@@ -265,11 +363,11 @@ class Database(object):
             interval_to_update = sorted(interval_to_scrape(day1=last_date, max_date=''))
             print('Updating interval: ', interval_to_update)
 
-            # Scraping data from bitmex and inserting it into our collection
-            for date in tqdm(interval_to_update[1:-1]):
-                # print(f'{date} is being processed...')
-                data = data_scraper(date, self.collection_name)
-                self.push_data_into_db(data, selected_collection, date)
+            # # Scraping data from bitmex and inserting it into our collection
+            # for date in tqdm(interval_to_update[1:-1]):
+            #     # print(f'{date} is being processed...')
+            #     data = data_scraper(date, self.collection_name)
+            #     return self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'interval':
             print(f'You have chosen INTERVAL, so we are going to collect data between two dates.'
@@ -292,11 +390,11 @@ class Database(object):
             interval_to_update = sorted(interval_to_scrape(day1=day1, max_date=max_date))
             print('Updating interval: ', interval_to_update)
 
-            # Scraping data from bitmex and inserting it into our collection
-            for date in tqdm(interval_to_update[:]):
-                # print(f'{date} is being processed...')
-                data = data_scraper(date, self.collection_name)
-                self.push_data_into_db(data, selected_collection, date)
+            # # Scraping data from bitmex and inserting it into our collection
+            # for date in tqdm(interval_to_update[:]):
+            #     # print(f'{date} is being processed...')
+            #     data = data_scraper(date, self.collection_name)
+            #     return self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'concrete':
             print(f'You have chosen CONCRETE, so we are going to collect data for that specific date'
@@ -317,11 +415,15 @@ class Database(object):
         interval_to_update = sorted(interval_to_scrape(day1=day1, max_date=day1))
         print('Updating interval: ', interval_to_update)
 
-        # Scraping data from bitmex and inserting it into our collection
-        for date in tqdm(interval_to_update):
-            # print(f'{date} is being processed...')
-            data = data_scraper(date, self.collection_name)
-            self.push_data_into_db(data, selected_collection, date)
+        if self.processed:
+            # If it is processed data we will need to execute the dataframe creator or something
+            pass
+        else:
+            # Scraping data from bitmex and inserting it into our collection
+            for date in tqdm(interval_to_update):
+                # print(f'{date} is being processed...')
+                data = data_scraper(date, self.collection_name)
+                return self.push_data_into_db(data, selected_collection, date)
 
     @staticmethod
     def push_data_into_db(available_data, db_collection, processed=False, date=''):
@@ -332,13 +434,13 @@ class Database(object):
         ----------
         date {[str]} -- Day the data belongs to.
         available_data {[Dataframe]} -- Scraped data we will convert into a dict to store into our mongo database.
-        db_collection {[str]} --  client connected to our db and collection
+        db_collection {[str]} -- Client connected to our db and collection
+        processed {[bool]} -- Flag indicating if the data is processed or raw.
 
         Returns:
         --------
             {[Collection]}
                 Including new data for the selected cryptocurrency
-
         """
 
         if processed:
@@ -355,8 +457,6 @@ class Database(object):
 
             except:
                 print(f'There is no available data for the date: ', date)
-
-
 
     def find_missing_data(self, selected_collection):
         """
@@ -454,7 +554,7 @@ class Database(object):
 
             # In case we already have data stored into our db
             if self.collection_name in self.show_available_collections():
-                print(f'Charging your raw dataset for {self.collection_name}...')
+                print(f'Collecting your raw dataset for {self.collection_name}...')
                 selected_collection = self.database_name[str(self.collection_name)]
                 raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
                 return raw_df, self.collection_name
@@ -472,66 +572,53 @@ class Database(object):
                 quit()
 
         else:
-            print(f'Charging your raw dataset for {self.collection_name}...')
+            print(f'Collecting your raw dataset for {self.collection_name}...')
             return raw_df, self.collection_name
 
     def store_processed_data(self, frequency, processed_data):
+        """
+        Reconnects to the mongoDB to check if we have a DB to store processed data, in case we don't, it will be created,
+        and push new processed data into our processed db.
+
+        Arguments:
+        ----------
+        frequency {[str]} -- Timeframe we are using to process the data.
+        processed_data {[Dataframe]} -- Processed data.
+
+        Returns:
+        --------
+            ()
+        """
+        print('[[[[ entering store_processed_data')
+
+        # Reconnecting to the database to store processed data
         self._client = MongoClient('localhost', 27017)
         self.db_name = 'processed_cryptos'
         existing_processed_db = self._client.list_database_names()
 
-
+        # Checking if we already have a db to store processed data
         if self.db_name in existing_processed_db:
-            print('Here!!!')
             self.database_name = self._client[self.db_name]
-            new_collection = self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_processed')
             existing_processed_data = self.show_available_collections()
 
-            # Filtering by processed data and by the selected timeframe and currency
-            existing_processed_data_timeframe = [x for x in existing_processed_data if x.split('_')[-1] == 'processed'
-                                                 and x.split('_')[0].lower() == frequency.lower() and x.split('_')[1]
-                                                 == self.select_collection()]
-            if existing_processed_data_timeframe:
+            if f'{frequency}_{self.collection_name.upper()}_PROCESSED' in existing_processed_data:
                 # Update collection
-                print(f'You have existing processed data for {self.collection_name.upper()} and {frequency} timeframe')
+                new_collection = self.database_name[f'{frequency}_{self.collection_name.upper()}_PROCESSED']
+
+                print(f'You have existing processed data for {self.collection_name.upper()} and {frequency} timeframe. '
+                      f'We are going to update it.')
                 self.push_data_into_db(processed_data, new_collection, processed=True)
                 pass
             else:
                 # Create a new collection
-                self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_processed')
-
+                self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_PROCESSED')
                 pass
+
+        # Creating a new db to store processed data.
         else:
             self.database_name = self._client[self.db_name]
-            new_collection = self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_processed')
+            new_collection = self.database_name.create_collection(f'{frequency}_{self.collection_name.upper()}_PROCESSED')
             self.push_data_into_db(processed_data, new_collection, processed=True)
-
-            print('existing_processed_data', self.show_available_collections())
-
-        # print(f'Available databases storing processed data for {frequency} timeframe {self.select_collection()}:'
-        #       f' {sorted(available_dbs_processed_data)}.')
-
-        # available_data = self.show_available_collections()
-        #
-        # print(f'Checking if there is existing processed data for {frequency} timeframe and for {self.select_collection()}.')
-        # # self.database_name = self.select_database()
-        # # self.selected_collection = self.select_collection().upper()
-        #
-        # # If we had the collection stored already
-        # if self.selected_collection in available_data:
-        #     print(f"You've been connected into your {self.db_name} database and logged into "
-        #           f"{self.selected_collection} data")
-        #     return self.database_name[self.selected_collection]
-        #
-        # # To generate a new collection storing a new processed crypto
-        # else:
-        #     self.database_name.create_collection(str(f'{(self.selected_collection)}_processed'))
-        #     print(
-        #         f"You've been connected into your {self.db_name} DB and logged into {self.selected_collection} data")
-        #     return self.database_name[self.selected_collection]
-
-
-
 
 
 
