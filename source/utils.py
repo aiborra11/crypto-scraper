@@ -29,9 +29,7 @@ def interval_to_scrape(day1='20141122', max_date=''):
 
             if int(next_day_format) <= int(max_date):
                 dates.append(next_day_format)
-
         return dates
-
     else:
         max_date = int(datetime.today().strftime('%Y%m%d'))
         for day in range(2500):
@@ -40,7 +38,6 @@ def interval_to_scrape(day1='20141122', max_date=''):
 
             if int(next_day_format) <= max_date:
                 dates.append(next_day_format)
-
         return dates
 
 def data_scraper(interval_to_update, crypto=''):
@@ -58,8 +55,6 @@ def data_scraper(interval_to_update, crypto=''):
             Dataset stored in mongo for a specific date and crypto.
 
     """
-
-    # crypto = crypto.split('_')[1] if len(crypto.split('_')) > 2 else crypto.split('_')[0]
     cryptos_info = crypto.split('_')
     crypto_data = pd.DataFrame()
     for date in tqdm(interval_to_update):
@@ -70,6 +65,5 @@ def data_scraper(interval_to_update, crypto=''):
             crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
         except:
             print(f'No available data for {crypto} at this date.')
-            # return None
     return crypto_data
 

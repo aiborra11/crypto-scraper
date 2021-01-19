@@ -14,8 +14,6 @@ if __name__ == "__main__":
     """
 
     while True:
-        # print('\nEnter 1 if you want to CREATE/UPDATE your database:')
-        # print('Enter 2 if you want to collect RAW data as a csv file:')
         print('Enter 1 if you want to COLLECT data:')
         print('Enter 2 if you want to DELETE a database/collection:')
         print('Enter 3 if you want to check your AVAILABLE STORED DATES for a specific crypto:')

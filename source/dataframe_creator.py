@@ -12,7 +12,7 @@ class ProcessData(Database):
 
     """
 
-    def __init__(self, frequency, processed=True):
+    def __init__(self, processed=True):
         """
         Executing essential functions: connecting to mongo, selecting db and collection, and bringing raw data to
         transform.
@@ -28,7 +28,6 @@ class ProcessData(Database):
         self.dataClean = self.data_cleaner(['', 'symbol', 'trdMatchID'])
         self.battle = self.bulls_vs_bears(['size', 'grossValue'])
 
-        # self.frequency = frequency
 
     def duplicates_remover(self):
         """
@@ -43,7 +42,6 @@ class ProcessData(Database):
             Dataframe with no duplicated transactions.
 
         """
-        print(self.df)
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
@@ -68,7 +66,6 @@ class ProcessData(Database):
         columns_delete = columns_list
         self.dataClean = self.noDuplicates[[col for col in self.noDuplicates.columns if col not in columns_delete]] \
             .rename(columns={'foreignNotional': 'usdTotal', 'homeNotional': 'btcTotal'})
-
         return self.dataClean.set_index('timestamp')
 
     def bulls_vs_bears(self, cols):
@@ -135,14 +132,12 @@ class ProcessData(Database):
 
         transactions = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency), self.battle['side'] == 'Buy'])
                                     [cols].count()).unstack('side').shift(1, freq=self.frequency)
-
         transactions.columns = transactions.columns.droplevel()
         self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'})
         self.dataTransact[['bearTransact', 'bullTransact']] = self.dataTransact[['bearTransact',
                                                                                  'bullTransact']].fillna(0)
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
-
         return self.dataTransact
 
     def ema_smoother(self, cols):
@@ -287,7 +282,6 @@ def get_data(df_raw, frequency):
     dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
                        'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
                        'TotalTransacts', 'High', 'Low', 'Open', 'Close']
-
     return processed_data.create_dataframe(dataset)
 
 # 17699    2018-10-26D23:59:59.810926000

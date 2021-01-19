@@ -109,6 +109,7 @@ class Database(object):
             else:
                 print('You do not have any PROCESSED data collection yet. \n\nChoose from the list below and create'
                       'a new one:\n', sorted(cryptos['symbol'].unique()))
+        # RAW collections
         else:
             available_data = [x for x in available_data if x.split('_')[-1].lower() == 'raw']
             if available_data:
@@ -168,7 +169,6 @@ class Database(object):
 
         # To generate a new collection storing RAW data for a new crypto
         elif self.collection_name not in available_data:
-            # self.database_name.create_collection(f'{self.collection_name}_RAW')
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data")
             return self.database_name[self.collection_name]
@@ -361,7 +361,6 @@ class Database(object):
             available_data = available_data.to_dict(orient='records')
             try:
                 db_collection.insert_many(available_data)
-
             except:
                 print(f'There is no available data for the date: ', date)
 
