@@ -70,6 +70,6 @@ def data_scraper(interval_to_update, crypto=''):
             crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
         except:
             print(f'No available data for {crypto} at this date.')
-            return None
+            # return None
     return crypto_data
 

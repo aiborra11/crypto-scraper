@@ -153,7 +153,7 @@ class Database(object):
             print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
             while True:
                 try:
-                    self.frequency = str(input()).replace(' ', '')
+                    self.frequency = str(input()).replace(' ', '').upper()
                 except ValueError:
                     print("Sorry, I didn't understand that.")
                     continue
@@ -328,6 +328,7 @@ class Database(object):
         else:
             return self.push_data_into_db(data, selected_collection, processed=False)
 
+
     @staticmethod
     def push_data_into_db(available_data, db_collection, processed=False, date=''):
         """
@@ -347,16 +348,18 @@ class Database(object):
         """
 
         if processed:
-            print(f'Pushing processed data into your collection')
-            available_data = available_data.to_dict(orient='records')
-            db_collection.insert_many(available_data)
+            try:
+                print(f'Pushing processed data into your collection')
+                available_data = available_data.to_dict(orient='records')
+                db_collection.insert_many(available_data)
+            except:
+                print(f'There is no available data for the date: ', date)
 
         else:
             # Converting scraped data into a format required for inserting data into mongodb
             available_data = available_data[[col for col in available_data.columns if col != 'symbol']]
             available_data = available_data.to_dict(orient='records')
             try:
-                print(available_data)
                 db_collection.insert_many(available_data)
 
             except:
@@ -489,49 +492,49 @@ class Database(object):
             print(f'Collecting your raw dataset for {self.collection_name}...')
             return raw_df, self.collection_name
 
-    def store_processed_data(self, processed_data):
-        """
-        Reconnects to the mongoDB to check if we have a DB to store processed data, in case we don't, it will be created,
-        and push new processed data into our processed db.
-
-        Arguments:
-        ----------
-        frequency {[str]} -- Timeframe we are using to process the data.
-        processed_data {[Dataframe]} -- Processed data.
-
-        Returns:
-        --------
-            ()
-        """
-
-        # Reconnecting to the database to store processed data
-        self._client = MongoClient('localhost', 27017)
-        self.db_name = 'processed_cryptos'
-        existing_processed_db = self._client.list_database_names()
-
-        # Checking if we already have a db to store processed data
-        if self.db_name in existing_processed_db:
-            self.database_name = self._client[self.db_name]
-            existing_processed_data = self.show_available_collections()
-
-            if f'{self.frequency}_{self.collection_name.upper()}_PROCESSED' in existing_processed_data:
-                # Update collection
-                new_collection = self.database_name[f'{self.frequency}_{self.collection_name.upper()}_PROCESSED']
-
-                print(f'You have existing processed data for {self.collection_name.upper()} and {self.frequency} timeframe. '
-                      f'We are going to update it.')
-                self.push_data_into_db(processed_data, new_collection, processed=True)
-                pass
-            else:
-                # Create a new collection
-                self.database_name.create_collection(f'{self.frequency}_{self.collection_name.upper()}_PROCESSED')
-                pass
-
-        # Creating a new db to store processed data.
-        else:
-            self.database_name = self._client[self.db_name]
-            new_collection = self.database_name.create_collection(f'{self.frequency}_{self.collection_name.upper()}_PROCESSED')
-            self.push_data_into_db(processed_data, new_collection, processed=True)
+    # def store_processed_data(self, processed_data):
+    #     """
+    #     Reconnects to the mongoDB to check if we have a DB to store processed data, in case we don't, it will be created,
+    #     and push new processed data into our processed db.
+    #
+    #     Arguments:
+    #     ----------
+    #     frequency {[str]} -- Timeframe we are using to process the data.
+    #     processed_data {[Dataframe]} -- Processed data.
+    #
+    #     Returns:
+    #     --------
+    #         ()
+    #     """
+    #
+    #     # Reconnecting to the database to store processed data
+    #     self._client = MongoClient('localhost', 27017)
+    #     self.db_name = 'processed_cryptos'
+    #     existing_processed_db = self._client.list_database_names()
+    #
+    #     # Checking if we already have a db to store processed data
+    #     if self.db_name in existing_processed_db:
+    #         self.database_name = self._client[self.db_name]
+    #         existing_processed_data = self.show_available_collections()
+    #
+    #         if f'{self.frequency}_{self.collection_name.upper()}_PROCESSED' in existing_processed_data:
+    #             # Update collection
+    #             new_collection = self.database_name[f'{self.frequency}_{self.collection_name.upper()}_PROCESSED']
+    #
+    #             print(f'You have existing processed data for {self.collection_name.upper()} and {self.frequency} timeframe. '
+    #                   f'We are going to update it.')
+    #             self.push_data_into_db(processed_data, new_collection, processed=True)
+    #             pass
+    #         else:
+    #             # Create a new collection
+    #             self.database_name.create_collection(f'{self.frequency}_{self.collection_name.upper()}_PROCESSED')
+    #             pass
+    #
+    #     # Creating a new db to store processed data.
+    #     else:
+    #         self.database_name = self._client[self.db_name]
+    #         new_collection = self.database_name.create_collection(f'{self.frequency}_{self.collection_name.upper()}_PROCESSED')
+    #         self.push_data_into_db(processed_data, new_collection, processed=True)
 
 
 

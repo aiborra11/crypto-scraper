@@ -43,6 +43,7 @@ class ProcessData(Database):
             Dataframe with no duplicated transactions.
 
         """
+        print(self.df)
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
@@ -86,9 +87,6 @@ class ProcessData(Database):
                 modified to evaluate if the transaction was a short or a long.
 
         """
-        print(self.df.columns)
-
-        print(self.dataClean.columns)
         filter_sell = self.dataClean['side'] == 'Sell'
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
