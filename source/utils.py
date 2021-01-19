@@ -1,5 +1,6 @@
 import pandas as pd
 
+from tqdm import tqdm
 from datetime import datetime, timedelta
 
 
@@ -42,13 +43,13 @@ def interval_to_scrape(day1='20141122', max_date=''):
 
         return dates
 
-def data_scraper(date, crypto=''):
+def data_scraper(interval_to_update, crypto=''):
     """
     Iterates through a list of dates scraping the data for the specified cryptocurrency.
 
     Arguments:
     ----------
-        interval {[list]} -- Interval of dates we are willing to collect.
+        interval_to_update {[list]} -- Interval of dates we are willing to collect.
         crypto {[str]} -- Cryptocurrency name we are willing to collect.
 
     Returns:
@@ -58,12 +59,16 @@ def data_scraper(date, crypto=''):
 
     """
 
-    try:
-        dataset = pd.read_csv(
-            f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
-        crypto_data = dataset[dataset['symbol'] == crypto]
-        return crypto_data
+    crypto = crypto.split('_')[1] if len(crypto.split('_')) > 1 else crypto
 
-    except:
-        print(f'No available data for {crypto} at this date.')
-        return None
+    crypto_data = pd.DataFrame()
+    for date in tqdm(interval_to_update):
+        try:
+            dataset = pd.read_csv(
+                f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
+            crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
+        except:
+            print(f'No available data for {crypto} at this date.')
+            return None
+    return crypto_data
+

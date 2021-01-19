@@ -28,7 +28,7 @@ class ProcessData(Database):
         self.dataClean = self.data_cleaner(['', 'symbol', 'trdMatchID'])
         self.battle = self.bulls_vs_bears(['size', 'grossValue'])
 
-        self.frequency = frequency
+        # self.frequency = frequency
 
     def duplicates_remover(self):
         """
