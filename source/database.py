@@ -101,19 +101,25 @@ class Database(object):
         # Filtering available PROCESSED/RAW collections
         if self.processed:
             available_data = [x for x in available_data if x.split('_')[-1].lower() == 'processed']
+            if available_data:
+                print(f'These are your current stored PROCESSED collections inside your "{self.db_name}" database:',
+                      sorted(available_data))
+                print("\nSelect the one you are willing to connect or write a new one if you want to create it",
+                      sorted(cryptos['symbol'].unique()))
+            else:
+                print('You do not have any PROCESSED data collection yet. \n\nChoose from the list below and create'
+                      'a new one:\n', sorted(cryptos['symbol'].unique()))
         else:
             available_data = [x for x in available_data if x.split('_')[-1].lower() == 'raw']
+            if available_data:
+                print(f'These are your current stored RAW collections inside your "{self.db_name}" database:',
+                      sorted(available_data))
+                print("\nSelect the one you are willing to connect or write a new one if you want to create it",
+                      sorted(cryptos['symbol'].unique()))
+            else:
+                print('You do not have any RAW data collection yet. \n\nChoose from the list below and create'
+                      'a new one:\n', sorted(cryptos['symbol'].unique()))
 
-        # In case we have data stored already
-        if available_data:
-            print(f'These are your current stored collections inside your "{self.db_name}" database:',
-                  sorted(available_data))
-        else:
-            print('You do not have any collection in this database yet. \nChoose from the list below:\n',
-                  sorted(cryptos['symbol'].unique()))
-
-        print('Select the one you are willing to connect or write a new one if you want to create it:\n',
-              sorted(cryptos['symbol'].unique()))
         while True:
             try:
                 self.collection_name = str(input()).upper()
@@ -133,6 +139,10 @@ class Database(object):
 
         # If we had the collection already (either processed or not) in our db
         if self.collection_name in available_data:
+            if self.processed:
+                self.frequency = self.collection_name.split('_')[0]
+            else:
+                pass
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data.")
             return self.database_name[self.collection_name]
@@ -153,6 +163,7 @@ class Database(object):
             self.database_name.create_collection(f'{self.frequency}_{self.collection_name}_PROCESSED')
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data")
+            self.collection_name = f'{self.frequency}_{self.collection_name}_PROCESSED'
             return self.database_name[self.collection_name]
 
         # To generate a new collection storing RAW data for a new crypto
@@ -161,8 +172,6 @@ class Database(object):
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data")
             return self.database_name[self.collection_name]
-
-
 
     def remove_collection(self, collection=''):
         """
@@ -260,12 +269,6 @@ class Database(object):
             interval_to_update = sorted(interval_to_scrape(day1='20141121', max_date=''))
             print('Updating interval: ', interval_to_update)
 
-            # # Scraping data from bitmex and inserting it into our collection
-            # for date in tqdm(interval_to_update[:-1]):
-            #     # print(f'{date} is being processed...')
-            #     data = data_scraper(date, self.collection_name)
-            #     return self.push_data_into_db(data, selected_collection, date)
-
         elif interval == 'update':
             print(f'You have chosen UPDATE, so we are going to collect data since your last day recorded.')
 
@@ -277,12 +280,6 @@ class Database(object):
             # Generating a list containing the dates we are going to scrape
             interval_to_update = sorted(interval_to_scrape(day1=last_date, max_date=''))
             print('Updating interval: ', interval_to_update)
-
-            # # Scraping data from bitmex and inserting it into our collection
-            # for date in tqdm(interval_to_update[1:-1]):
-            #     # print(f'{date} is being processed...')
-            #     data = data_scraper(date, self.collection_name)
-            #     return self.push_data_into_db(data, selected_collection, date)
 
         elif interval == 'interval':
             print(f'You have chosen INTERVAL, so we are going to collect data between two dates.'
@@ -305,12 +302,6 @@ class Database(object):
             interval_to_update = sorted(interval_to_scrape(day1=day1, max_date=max_date))
             print('Updating interval: ', interval_to_update)
 
-            # # Scraping data from bitmex and inserting it into our collection
-            # for date in tqdm(interval_to_update[:]):
-            #     # print(f'{date} is being processed...')
-            #     data = data_scraper(date, self.collection_name)
-            #     return self.push_data_into_db(data, selected_collection, date)
-
         elif interval == 'concrete':
             print(f'You have chosen CONCRETE, so we are going to collect data for that specific date'
                   f'\nWrite your date following format: "YYYYMMDD"')
@@ -329,7 +320,6 @@ class Database(object):
 
             interval_to_update = sorted(interval_to_scrape(day1=day1, max_date=day1))
             print('Updating interval: ', interval_to_update)
-
 
         # Scraping data from bitmex and inserting it into our collection
         data = data_scraper(interval_to_update, self.collection_name)
@@ -366,6 +356,7 @@ class Database(object):
             available_data = available_data[[col for col in available_data.columns if col != 'symbol']]
             available_data = available_data.to_dict(orient='records')
             try:
+                print(available_data)
                 db_collection.insert_many(available_data)
 
             except:
@@ -435,9 +426,8 @@ class Database(object):
             csv file in our data.nosync folder
 
         """
-        print('--~', selected_collection)
         raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
-
+        print(raw_df)
         if raw_df.empty:
             interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
             cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
@@ -499,7 +489,7 @@ class Database(object):
             print(f'Collecting your raw dataset for {self.collection_name}...')
             return raw_df, self.collection_name
 
-    def store_processed_data(self, frequency, processed_data):
+    def store_processed_data(self, processed_data):
         """
         Reconnects to the mongoDB to check if we have a DB to store processed data, in case we don't, it will be created,
         and push new processed data into our processed db.

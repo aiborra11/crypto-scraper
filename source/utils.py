@@ -59,13 +59,14 @@ def data_scraper(interval_to_update, crypto=''):
 
     """
 
-    crypto = crypto.split('_')[1] if len(crypto.split('_')) > 1 else crypto
-
+    # crypto = crypto.split('_')[1] if len(crypto.split('_')) > 2 else crypto.split('_')[0]
+    cryptos_info = crypto.split('_')
     crypto_data = pd.DataFrame()
     for date in tqdm(interval_to_update):
         try:
             dataset = pd.read_csv(
                 f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
+            crypto = [crypt for crypt in cryptos_info if crypt in dataset['symbol'].unique()][0]
             crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
         except:
             print(f'No available data for {crypto} at this date.')
