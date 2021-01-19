@@ -16,7 +16,7 @@ import pandas as pd
 if __name__ == "__main__":
     """
     
-    FEEL FREE TO MODIFY 'XBTUSD' TO COLLECT DATA FROM A DIFFERENT CRYPTO
+    PIPELINE TO EXECUTE THE CRYPTO-SCRAPER    
     
     """
 
@@ -38,8 +38,10 @@ if __name__ == "__main__":
         if userChoice not in available_options:
             print("Sorry, I didn't understand that. Choose a number between 1 and 7")
             continue
-        else:
+        elif userChoice in available_options:
             break
+        else:
+            continue
 
     # if userChoice == 1:
     #     db = Database()
@@ -78,7 +80,6 @@ if __name__ == "__main__":
             processed_ohcl = initial_data.ohcl()
             processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
             print(processed_data)
-
 
         else:
             db = Database(processed=False)
@@ -178,6 +179,7 @@ if __name__ == "__main__":
         db = Database()
         deletedColl = db.remove_collection()
         print(f'The collection has been removed successfully from the database.')
+
 
     elif userChoice == 3:
         db = Database()
