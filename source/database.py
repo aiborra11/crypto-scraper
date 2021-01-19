@@ -98,68 +98,71 @@ class Database(object):
         cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                               f'{interval}.csv.gz')
 
+        # Filtering available PROCESSED/RAW collections
         if self.processed:
-            available_data = [x for x in available_data if x.split('_')[0] == 'processed']
+            available_data = [x for x in available_data if x.split('_')[-1].lower() == 'processed']
         else:
-            available_data = [x for x in available_data if x.split('_')[0] == 'raw']
+            available_data = [x for x in available_data if x.split('_')[-1].lower() == 'raw']
 
         # In case we have data stored already
         if available_data:
             print(f'These are your current stored collections inside your "{self.db_name}" database:',
                   sorted(available_data))
-            print('Select the one you are willing to connect or write a new one if you want to create it:\n',
-                  sorted(cryptos['symbol'].unique()))
         else:
             print('You do not have any collection in this database yet. \nChoose from the list below:\n',
                   sorted(cryptos['symbol'].unique()))
 
+        print('Select the one you are willing to connect or write a new one if you want to create it:\n',
+              sorted(cryptos['symbol'].unique()))
+        while True:
+            try:
+                self.collection_name = str(input()).upper()
+            except ValueError:
+                print("Sorry, I didn't understand that.")
+                continue
+
+            if self.collection_name in available_data:
+                break
+            elif self.collection_name in cryptos['symbol'].unique():
+                break
+            elif self.collection_name not in cryptos['symbol'].unique():
+                print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
+                continue
+            else:
+                print('Something went wrong! Please, try again.')
+
+        # If we had the collection already (either processed or not) in our db
+        if self.collection_name in available_data:
+            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
+                  f"data.")
+            return self.database_name[self.collection_name]
+
+        # To generate a new collection storing PROCESSED data for a new crypto
+        elif self.collection_name not in available_data and self.processed:
+            # We need a timeframe to get processed data
+            print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
             while True:
                 try:
-                    self.collection_name = str(input()).upper()
+                    self.frequency = str(input()).replace(' ', '')
                 except ValueError:
                     print("Sorry, I didn't understand that.")
                     continue
-
-                if self.collection_name in available_data:
-                    break
-                elif self.collection_name in cryptos['symbol'].unique():
-                    break
-                elif self.collection_name not in cryptos['symbol'].unique():
-                    print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
-                    continue
                 else:
-                    print('Something went wrong! Please, try again.')
+                    break
 
-            # If we had the collection already (either processed or not) in our db
-            if self.collection_name in available_data:
-                print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
-                      f"data")
-                return self.database_name[self.collection_name]
+            self.database_name.create_collection(f'{self.frequency}_{self.collection_name}_PROCESSED')
+            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
+                  f"data")
+            return self.database_name[self.collection_name]
 
-            # To generate a new collection storing PROCESSED data for a new crypto
-            elif self.collection_name not in available_data and self.processed:
-                # We need a timeframe to get processed data
-                print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
-                while True:
-                    try:
-                        self.frequency = str(input()).replace(' ', '')
-                    except ValueError:
-                        print("Sorry, I didn't understand that.")
-                        continue
-                    else:
-                        break
+        # To generate a new collection storing RAW data for a new crypto
+        elif self.collection_name not in available_data:
+            # self.database_name.create_collection(f'{self.collection_name}_RAW')
+            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
+                  f"data")
+            return self.database_name[self.collection_name]
 
-                self.database_name.create_collection(f'{self.frequency}_{self.collection_name}_PROCESSED')
-                print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
-                      f"data")
-                return self.database_name[self.collection_name]
 
-            # To generate a new collection storing RAW data for a new crypto
-            elif self.collection_name not in available_data:
-                self.database_name.create_collection(f'{self.collection_name}_RAW')
-                print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
-                      f"data")
-                return self.database_name[self.collection_name]
 
     def remove_collection(self, collection=''):
         """
@@ -335,7 +338,6 @@ class Database(object):
         else:
             return self.push_data_into_db(data, selected_collection, processed=False)
 
-
     @staticmethod
     def push_data_into_db(available_data, db_collection, processed=False, date=''):
         """
@@ -433,7 +435,7 @@ class Database(object):
             csv file in our data.nosync folder
 
         """
-
+        print('--~', selected_collection)
         raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
 
         if raw_df.empty:
@@ -464,26 +466,25 @@ class Database(object):
                     coll_prov.append(self.collection_name)
                     continue
 
-            # In case we already have data stored into our db
-            if self.collection_name in self.show_available_collections():
-                print(f'Collecting your raw dataset for {self.collection_name}...')
-                selected_collection = self.database_name[str(self.collection_name)]
-                raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
-                return raw_df, self.collection_name
-
+            # # In case we already have data stored into our db
+            # if self.collection_name in self.show_available_collections():
+            #     print(f'Collecting your raw dataset for {self.collection_name}...')
+            #     selected_collection = self.database_name[str(self.collection_name)]
+            #     raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
+            #     return raw_df, self.collection_name
 
 
             # Estamos almacenando RAW data en la processed DB
             # Populating db before retrieving raw data
-            elif self.collection_name.lower() == 'yes':
-                # Switching into raw_data db. We do not want raw data into the processed_cryptos db.
-                if self.processed:
-                    print(f'Populating your db with raw data for {str(coll_prov[-2])} into your "raw_cryptos" db...')
-                    selected_collection = self._client['raw_cryptos'][str(coll_prov[-2])]
-
-                else:
-                    print(f'Populating your db with raw data for {str(coll_prov[-2])}...')
-                    selected_collection = self.database_name[str(coll_prov[-2])]
+            if self.collection_name.lower() == 'yes':
+                # # Switching into raw_data db. We do not want raw data into the processed_cryptos db.
+                # if self.processed:
+                #     print(f'Populating your db with raw data for {str(coll_prov[-2])} into your "raw_cryptos" db...')
+                #     selected_collection = self._client['raw_cryptos'][str(coll_prov[-2])]
+                #
+                # else:
+                #     print(f'Populating your db with raw data for {str(coll_prov[-2])}...')
+                #     selected_collection = self.database_name[str(coll_prov[-2])]
 
                 self.collection_name = str(coll_prov[-2])
                 self.populate_collection(selected_collection)
