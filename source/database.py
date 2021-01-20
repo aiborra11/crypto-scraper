@@ -322,9 +322,9 @@ class Database(object):
             print('Updating interval: ', interval_to_update)
 
         # Scraping data from bitmex and inserting it into our collection
-        data = data_scraper(interval_to_update, self.collection_name)[0]
-        if data[1]:
-            print(f'You should double-check {data[1]} since we could not find any data.')
+        data, warnings = data_scraper(interval_to_update, self.collection_name)
+        if warnings:
+            print(f'You should double-check {warnings} since we could not find any data.')
         else:
             pass
         if self.processed:
