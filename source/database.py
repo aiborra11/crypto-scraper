@@ -78,7 +78,7 @@ class Database(object):
             print('Something went wrong!')
             quit()
 
-    def select_collection(self):
+    def select_collection(self, processed):
         """
         Shows a list of your existing collections and connects us to the one we are interested in.
         It also allows us to create a new one in case we need it.
@@ -92,14 +92,17 @@ class Database(object):
             Access to the written collection and to its data.
 
         """
-
+        self.processed = processed
         available_data = self.show_available_collections()
         interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
         cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                               f'{interval}.csv.gz')
 
         # Filtering available PROCESSED/RAW collections
-        if self.processed:
+        if self.processed == '':
+            print(f'These are your current stored collections inside your "{self.db_name}" database:', available_data)
+
+        elif self.processed:
             available_data = [x for x in available_data if x.split('_')[-1].lower() == 'processed']
             if available_data:
                 print(f'These are your current stored PROCESSED collections inside your "{self.db_name}" database:',
@@ -322,12 +325,17 @@ class Database(object):
             print('Updating interval: ', interval_to_update)
 
         # Scraping data from bitmex and inserting it into our collection
-        data, warnings = data_scraper(interval_to_update, self.collection_name)
+        data, warnings, crypto = data_scraper(interval_to_update, self.collection_name)
+
         if warnings:
             print(f'You should double-check {warnings} since we could not find any data.')
         else:
             pass
-        if self.processed:
+        if self.processed:      #TODO TEST IT!!!
+            # Storing also the already collected raw data into a new collection
+            self.database_name.create_collection(f'{crypto}_RAW')
+            selected_collection = self.database_name[f'{crypto}_RAW']
+            self.push_data_into_db(data, selected_collection, processed=False)
             return self.push_data_into_db(data, selected_collection, processed=True)
         else:
             return self.push_data_into_db(data, selected_collection, processed=False)

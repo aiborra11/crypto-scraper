@@ -20,7 +20,7 @@ class ProcessData(Database):
         """
         # Bringing raw data from the mongoDB
         super().__init__(processed)
-        selected_collection = self.select_collection()
+        selected_collection = self.select_collection(processed)
         self.df = self.collect_raw_data(selected_collection)[0]
 
         # Essential data preprocessing (cleaning and summarizing features into less columns)

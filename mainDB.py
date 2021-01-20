@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
         else:
             db = Database(processed=False)
-            selected_collection = db.select_collection()
+            selected_collection = db.select_collection(processed=False)
             raw_data = db.collect_raw_data(selected_collection)
             print('--->raw_data', raw_data)
             # raw_data[0].to_csv(f'data.nosync/RAW_{raw_data[1]}.gz', compression='gzip')
@@ -101,13 +101,13 @@ if __name__ == "__main__":
 
     elif userChoice == 3:
         db = Database()
-        selected_collection = db.select_collection()
+        selected_collection = db.select_collection(processed='')
         current_data = db.show_stored_dates(selected_collection)
         print(f'You have data for {len(current_data)} days:', current_data)
 
     elif userChoice == 4:
         db = Database()
-        selected_collection = db.select_collection()
+        selected_collection = db.select_collection(processed='')
         warnings = db.find_missing_data(selected_collection)
         print('You should double-check the data for these dates: ', warnings)
 

@@ -63,5 +63,5 @@ def data_scraper(interval_to_update, crypto=''):
         except:
             # Adding dates we cannot get data and return it for warnings
             warnings.append(date)
-    return crypto_data, warnings
+    return crypto_data, warnings, crypto
 
