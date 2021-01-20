@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
 
         if processed == 'processed':
-            initial_data = ProcessData(frequency='', processed=True)
+            initial_data = ProcessData(processed=True)
             processed_totals = initial_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal',
                                                               'usdTotal', 'ContractsTraded_size',
                                                               'ContractsTraded_grossValue']).fillna(0)
