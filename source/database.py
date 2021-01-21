@@ -11,7 +11,7 @@ from source.utils import data_scraper, interval_to_scrape
 
 class Database(object):
     """
-    Access to different databases where daily collections are stored containing tick data from the orderbook
+    Access to different databases where collections are stored containing tick data from the orderbook
     and for a specified cryptocurrency.
 
     """
@@ -37,10 +37,10 @@ class Database(object):
             Access to the written database.
 
         """
+        # Filtering dbs we do not need
         available_dbs = [x for x in self._client.list_database_names() if x not in ['admin', 'config', 'local']]
         print('Write the db you are interested in: ', available_dbs)
         print('You can also write e new one in case you want to create it...')
-
 
         db_prov = []
         while True:
@@ -85,13 +85,14 @@ class Database(object):
 
         Arguments:
         ----------
-        ()
+        processed {[bool]} -- Flag indicating if the data is processed or raw.
 
         Returns:
         --------
             Access to the written collection and to its data.
 
         """
+        # Updating flag for processed data
         self.processed = processed
         available_data = self.show_available_collections()
         interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
@@ -113,6 +114,7 @@ class Database(object):
             else:
                 print('You do not have any PROCESSED data collection yet. \n\nChoose from the list below and create'
                       'a new one:\n', sorted(cryptos['symbol'].unique()))
+
         # RAW collections
         else:
             available_data = [x for x in available_data if x.split('_')[-1].lower() == 'raw']
@@ -184,11 +186,11 @@ class Database(object):
 
         Arguments:
         ----------
-        ()
+        collection {[str]} -- In case we know the collection we want to delete
 
         Returns:
         --------
-        ()
+            Drops a stored collection
 
         """
         if collection:
@@ -224,7 +226,7 @@ class Database(object):
          ()
          Returns:
          --------
-        Our stored collections in the db we have connected
+            Our stored collections in the db we have connected
         """
         available_data = sorted(self.database_name.list_collection_names())
         return available_data
@@ -331,10 +333,8 @@ class Database(object):
             print(f'You should double-check {warnings} since we could not find any data.')
         else:
             print('Perfect! We collected data for every required date. 0 warnings found.')
-        if self.processed:      #TODO TEST IT!!!
+        if self.processed:
             # Storing also the already collected raw data into a new collection
-            print('self.processed--->>', self.processed)
-
             self.database_name.create_collection(f'{crypto}_RAW')
             selected_collection_raw = self.database_name[f'{crypto}_RAW']
             self.push_data_into_db(data, selected_collection_raw, processed=False)
@@ -343,7 +343,6 @@ class Database(object):
             self.database_name.create_collection(f'{crypto}_RAW')
             selected_collection_raw = self.database_name[f'{crypto}_RAW']
             return self.push_data_into_db(data, selected_collection_raw, processed=False)
-
 
     @staticmethod
     def push_data_into_db(available_data, db_collection, processed=False, date=''):
@@ -430,31 +429,37 @@ class Database(object):
         actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
         return actual_dates
 
-    def collect_raw_data(self, selected_collection):
+    def collect_raw_data(self):
         """
-        Generates a csv file (gzip compressed) containing raw data for the required crypto. In case any data is found
-        within the db we can also populate it and then pull the data.
+        Checks if we have previous raw data for our desired crypto. In case we do, it retrieves the data,
+        in case we don't it scrapes it and generates a new collections where pushing the new raw data.
 
         Arguments:
         ----------
-        selected_collection {[str]} --  client connected to our db and collection
+        ()
 
         Returns:
         --------
-            csv file in our data.nosync folder
-
+            {[raw_df]}
+                Dataframe containing raw data for the desired cryptocurrency.
+            {[self.collection_name]}
+                Name of the crypto
         """
-        self.collection_name = self.collection_name.split('_')[1] if self.processed else self.collection_name
+        # Cleaning the name of the crypto from other metadata (frequency, processed, raw)
+        self.collection_name = self.collection_name.split('_')[1] if self.processed else self.collection_name.split('_')[0]
+        # Connecting to the raw data collection
         selected_collection_raw = self.database_name[f'{self.collection_name}_RAW']
         raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
+
+        # In case we do not have any previous raw data for this crypto
         if raw_df.empty:
             interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
             cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                                   f'{interval}.csv.gz')
-
             print('We could not retrieve any data since you do not have any for this cryptocurrency. '
                   f'\nWrite "yes" to store data for {self.collection_name} in your db'
                   f'\nOtherwise, write the correct name')
+
             coll_prov = [self.collection_name]
             while True:
                 try:
@@ -475,25 +480,8 @@ class Database(object):
                     coll_prov.append(self.collection_name)
                     continue
 
-            # # In case we already have data stored into our db
-            # if self.collection_name in self.show_available_collections():
-            #     print(f'Collecting your raw dataset for {self.collection_name}...')
-            #     selected_collection = self.database_name[str(self.collection_name)]
-            #     raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
-            #     return raw_df, self.collection_name
-
-
             # Populating db before retrieving raw data
             if self.collection_name.lower() == 'yes':
-                # # Switching into raw_data db. We do not want raw data into the processed_cryptos db.
-                # if self.processed:
-                #     print(f'Populating your db with raw data for {str(coll_prov[-2])} into your "raw_cryptos" db...')
-                #     selected_collection = self._client['raw_cryptos'][str(coll_prov[-2])]
-                #
-                # else:
-                #     print(f'Populating your db with raw data for {str(coll_prov[-2])}...')
-                #     selected_collection = self.database_name[str(coll_prov[-2])]
-
                 self.collection_name = str(coll_prov[-2])
                 self.populate_collection(selected_collection_raw)
                 raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
@@ -502,7 +490,7 @@ class Database(object):
             else:
                 print('something went wrong!')
                 quit()
-
+        # We have previous raw data for this crypto
         else:
             print(f'Collecting your raw dataset for {self.collection_name}...')
             return raw_df, self.collection_name

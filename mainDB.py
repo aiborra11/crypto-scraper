@@ -61,8 +61,7 @@ if __name__ == "__main__":
         else:
             db = Database(processed=False)
             selected_collection = db.select_collection(processed=False)[0]
-            raw_data = db.collect_raw_data(selected_collection)
-
+            raw_data = db.collect_raw_data()
 
         print('Do you want to store your data as a CSV file (YES/NO)?')
         while True:
@@ -79,20 +78,22 @@ if __name__ == "__main__":
                 print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
 
         if csv_file == 'yes' and processed == 'processed':
-            processed_data.to_csv(f'data.nosync/{collection_name}.gz', compression='gzip')
+            print(processed_data)
+            processed_data.to_csv(f'data.nosync/{frequency}_{collection_name}_PROCESSED.gz', compression='gzip')
             print(
-                f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created successfully. '
-                f'Check your data folder!')
+                f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created '
+                f'successfully. Check your data folder!')
         elif csv_file == 'yes':
-            raw_data[0].to_csv(f'data.nosync/{raw_data[1]}.gz', compression='gzip')
-            print(f'Your csv file containing data for {raw_data[1]} has been created successfully. '
+            print(raw_data)
+            raw_data[0].to_csv(f'data.nosync/{raw_data[1]}_RAW.gz', compression='gzip')
+            print(f'Your csv file containing data for {raw_data[1]}_RAW has been created successfully. '
                   f'Check your data folder!')
         else:
             print('Ok! I will just show the data:')
             try:
-                print('--->processed_data\n', processed_data)
+                print('--->processed_data<---\n', processed_data)
             except NameError:
-                print('--->raw_data\n', raw_data[0])
+                print('--->raw_data<---\n', raw_data[0])
 
 
 
@@ -124,7 +125,6 @@ if __name__ == "__main__":
         db = Database()
         deletedColl = db.remove_collection()
         print(f'The collection has been removed successfully from the database.')
-
 
     elif userChoice == 3:
         db = Database()
