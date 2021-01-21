@@ -3,25 +3,31 @@ import numpy as np
 
 from datetime import datetime
 from os import listdir
+from .database import Database
 
 
-class ProcessData(object):
+class ProcessData(Database):
     """
-    Converts raw data into a determined frequency and creates new features as columns.
+    Inherits Database class to bring raw data and transform it using its own methods.
 
     """
 
-    def __init__(self, df, frequency):
+    def __init__(self, processed=True):
         """
-        Allowing different functions to inherit from each other.
+        Executing essential functions: connecting to mongo, selecting db and collection and bringing raw data to
+        transform.
 
         """
-        self.df = df
+        # Bringing raw data from the mongoDB
+        super().__init__(processed)
+        selected_collection, self.collection_name = self.select_collection(processed)
+        self.df = self.collect_raw_data()[0]
+
+        # Essential data preprocessing (cleaning and summarizing features into less columns)
         self.noDuplicates = self.duplicates_remover()
         self.dataClean = self.data_cleaner(['', 'symbol', 'trdMatchID'])
         self.battle = self.bulls_vs_bears(['size', 'grossValue'])
 
-        self.frequency = frequency
 
     def duplicates_remover(self):
         """
@@ -37,15 +43,15 @@ class ProcessData(object):
 
         """
         self.df = self.df[self.df['timestamp'].notna()]
-        self.noDuplicates = self.df.drop_duplicates(subset='trdMatchID', keep='first')
+        self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
             lambda t: datetime.strptime(str(t)[:19].replace('D', ' '), '%Y-%m-%d %H:%M:%S'))
-
+        print(f'{len(self.df) - len(self.noDuplicates)} duplicates have been removed from your dataframe.')
         return self.noDuplicates
 
     def data_cleaner(self, columns_list):
         """
-        Deletes columns we no longer need and renames foreigNotional : usdTotal and homenotional : btcTotal
+        Deletes columns we no longer need and renames foreignNotional : usdTotal and homeNotional : btcTotal
 
         Arguments:
         ----------
@@ -57,11 +63,9 @@ class ProcessData(object):
                 Containing all the scraped and stored data for the selected dates and cryptocurrency.
 
         """
-        # print('Cleaning columns we no longer need...')
         columns_delete = columns_list
         self.dataClean = self.noDuplicates[[col for col in self.noDuplicates.columns if col not in columns_delete]] \
             .rename(columns={'foreignNotional': 'usdTotal', 'homeNotional': 'btcTotal'})
-
         return self.dataClean.set_index('timestamp')
 
     def bulls_vs_bears(self, cols):
@@ -71,7 +75,7 @@ class ProcessData(object):
 
         Arguments:
         ----------
-        columnsList {[list]} -- Name of the columns we are willing evaluate. By default: ['size', 'grossValue']
+        cols {[list]} -- Name of the columns we are willing evaluate. By default: ['size', 'grossValue']
 
         Returns:
         --------
@@ -80,13 +84,10 @@ class ProcessData(object):
                 modified to evaluate if the transaction was a short or a long.
 
         """
-        # print('Converting shorts into negative and longs into positives...')
-
         filter_sell = self.dataClean['side'] == 'Sell'
         for col in cols:
             self.dataClean.loc[filter_sell, f'ContractsTraded_{col}'] = - self.dataClean.loc[filter_sell, col]
             self.dataClean.loc[~filter_sell, f'ContractsTraded_{col}'] = self.dataClean.loc[~filter_sell, col]
-
         return self.dataClean
 
     def sum_grouper(self, cols):
@@ -126,20 +127,16 @@ class ProcessData(object):
                 bullTransact: number of bullish transactions.
                 warTransact: bull transactions - bear transactions
                 totalTransact: bull transactions + bear transactions
-
         """
 
-        # print('Calculating the total number of transactions...')
         transactions = pd.DataFrame(self.battle.groupby([pd.Grouper(freq=self.frequency), self.battle['side'] == 'Buy'])
                                     [cols].count()).unstack('side').shift(1, freq=self.frequency)
-
         transactions.columns = transactions.columns.droplevel()
         self.dataTransact = transactions.rename(columns={0: 'bearTransact', 1: 'bullTransact'})
         self.dataTransact[['bearTransact', 'bullTransact']] = self.dataTransact[['bearTransact',
                                                                                  'bullTransact']].fillna(0)
         self.dataTransact['warTransact'] = self.dataTransact.bullTransact - self.dataTransact.bearTransact
         self.dataTransact['totalTransact'] = self.dataTransact.bullTransact + self.dataTransact.bearTransact
-
         return self.dataTransact
 
     def ema_smoother(self, cols):
@@ -154,11 +151,7 @@ class ProcessData(object):
         --------
         {[DataFrame]}
             Dataframe with the cryptocurrency smoothed price.
-
-
         """
-
-        # print('Calculating the smoothed price...')
         for t in self.dataTransact['totalTransact'].values:
             exp_mov_avg = self.battle.ewm(span=t, adjust=False).mean()
 
@@ -188,20 +181,21 @@ class ProcessData(object):
 
     def ohcl(self):
         """
-        Finds the max and lows for the selected frequency.
+        Generates the candlesticks by finding the first and last values and the max and lows for the selected frequency.
 
         Arguments:
         ----------
-        cols {[list]} -- Name of the columns we are interested in obtaining the log returns. By default = ['price']
+        ()
 
         Returns:
         --------
-        {[DataFrame]}
-            Dataframe with the max and min wicks during the selected period of time.
-
+            {[self.dataPx]}
+                Dataframe with the max and min wicks during the selected period of time.
+            {[self.collection_name]}
+                Crypto we are scraping.
+            {[self.frequency]}
+                Timeframe we are using to convert the data.
         """
-
-        # print('Calculating open, high, low and close values...')
         self.dataPx = self.dataTransact
         self.dataPx[['Open', 'High', 'Low', 'Close']] = self.dataClean.groupby(pd.Grouper(
                                                         freq=self.frequency))['price'].agg(
@@ -210,7 +204,7 @@ class ProcessData(object):
                                                                                 Low="min",
                                                                                 Close="last"
                                                                         ).shift(1, freq=self.frequency)
-        return self.dataPx
+        return self.dataPx, self.collection_name, self.frequency
 
     def create_dataframe(self, dataset):
         """
@@ -243,7 +237,6 @@ class ProcessData(object):
             final['Open'] = final['Open'].fillna(final.Close)
             final = final.fillna(0)
             print(f'Your dataframe has {len(all_data)} rows in total.')
-
             return final.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
 
         else:
@@ -257,38 +250,36 @@ class ProcessData(object):
             all_data['Open'] = all_data['Open'].fillna(all_data.Close)
             all_data = all_data.fillna(0)
             print(f'Your dataframe has {len(all_data)} rows in total.')
-
             return all_data.to_csv(f'data.nosync/{self.frequency}_general.csv', index=False)
 
 
-def get_data(df_raw, frequency):
-    """
-    Main to execute all previous functions
-
-    Arguments:
-    ----------
-        df_raw {[DataFrame]} -- Initial dataframe containing the raw data.
-        frequency {[str]} -- Desired frequency you'd like to receive the final data.
-
-    Returns:
-    --------
-    {[csv]}
-        Dataframe stored in your data folder with features to work on.
-
-    """
-
-    processed_data = ProcessData(df_raw, frequency)
-
-    data_totals = processed_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
-                                                   'ContractsTraded_grossValue']).fillna(0)
-    processed_data.counter_grouper(cols=['side']).fillna(0)
-    data_px = processed_data.ohcl()
-
-    dataset = pd.concat([data_totals, data_px], axis=1).reset_index()
-    dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
-                       'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
-                       'TotalTransacts', 'High', 'Low', 'Open', 'Close']
-
-    return processed_data.create_dataframe(dataset)
+# def get_data(df_raw, frequency):
+#     """
+#     Main to execute all previous functions
+#
+#     Arguments:
+#     ----------
+#         df_raw {[DataFrame]} -- Initial dataframe containing the raw data.
+#         frequency {[str]} -- Desired frequency you'd like to receive the final data.
+#
+#     Returns:
+#     --------
+#     {[csv]}
+#         Dataframe stored in your data folder with features to work on.
+#
+#     """
+#
+#     processed_data = ProcessData(df_raw, frequency)
+#
+#     data_totals = processed_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal', 'usdTotal', 'ContractsTraded_size',
+#                                                    'ContractsTraded_grossValue']).fillna(0)
+#     processed_data.counter_grouper(cols=['side']).fillna(0)
+#     data_px = processed_data.ohcl()
+#
+#     dataset = pd.concat([data_totals, data_px], axis=1).reset_index()
+#     dataset.columns = ['Timestamp', 'Size', 'GrossValue', 'Total_BTC', 'Total_USD', 'ContractsTraded_Size',
+#                        'ContractsTraded_GrossValue', 'BearTransacts', 'BullTransacts', 'WarTransacts',
+#                        'TotalTransacts', 'High', 'Low', 'Open', 'Close']
+#     return processed_data.create_dataframe(dataset)
 
 # 17699    2018-10-26D23:59:59.810926000
