@@ -92,7 +92,7 @@ if __name__ == "__main__":
             try:
                 print('--->processed_data\n', processed_data)
             except NameError:
-                print('--->raw_data\n', raw_data)
+                print('--->raw_data\n', raw_data[0])
 
 
 

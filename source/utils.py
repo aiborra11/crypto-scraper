@@ -51,7 +51,9 @@ def data_scraper(interval_to_update, crypto=''):
             Dataset stored in mongo for a specific date and crypto.
 
     """
+
     cryptos_info = crypto.split('_')
+
     crypto_data = pd.DataFrame()
     warnings = []
     for date in tqdm(interval_to_update):
@@ -59,7 +61,7 @@ def data_scraper(interval_to_update, crypto=''):
             dataset = pd.read_csv(
                 f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
             crypto = [crypt for crypt in cryptos_info if crypt in dataset['symbol'].unique()][0]
-            print('--->>>> cryto', crypto)
+
             crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
         except:
             # Adding dates we cannot get data and return it for warnings

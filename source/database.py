@@ -327,11 +327,10 @@ class Database(object):
 
         # Scraping data from bitmex and inserting it into our collection
         data, warnings, crypto = data_scraper(interval_to_update, self.collection_name)
-
         if warnings:
             print(f'You should double-check {warnings} since we could not find any data.')
         else:
-            pass
+            print('Perfect! We collected data for every required date. 0 warnings found.')
         if self.processed:      #TODO TEST IT!!!
             # Storing also the already collected raw data into a new collection
             print('self.processed--->>', self.processed)
@@ -341,7 +340,9 @@ class Database(object):
             self.push_data_into_db(data, selected_collection_raw, processed=False)
             return self.push_data_into_db(data, selected_collection, processed=True)
         else:
-            return self.push_data_into_db(data, selected_collection, processed=False)
+            self.database_name.create_collection(f'{crypto}_RAW')
+            selected_collection_raw = self.database_name[f'{crypto}_RAW']
+            return self.push_data_into_db(data, selected_collection_raw, processed=False)
 
 
     @staticmethod
@@ -443,13 +444,9 @@ class Database(object):
             csv file in our data.nosync folder
 
         """
-
-        print('collection in collect_raw_data--->>', selected_collection)  #TODO WE ARE STILL CONNECTING TO PROCESSED COLLECTION
-
-        # print('collection in selected_collection_raw--->>', selected_collection_raw)  #TODO WE ARE STILL CONNECTING TO PROCESSED COLLECTION
-
-        raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
-        print(raw_df)
+        self.collection_name = self.collection_name.split('_')[1] if self.processed else self.collection_name
+        selected_collection_raw = self.database_name[f'{self.collection_name}_RAW']
+        raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
         if raw_df.empty:
             interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
             cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
@@ -498,8 +495,8 @@ class Database(object):
                 #     selected_collection = self.database_name[str(coll_prov[-2])]
 
                 self.collection_name = str(coll_prov[-2])
-                self.populate_collection(selected_collection)
-                raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
+                self.populate_collection(selected_collection_raw)
+                raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
                 return raw_df, self.collection_name
 
             else:
