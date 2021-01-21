@@ -20,7 +20,7 @@ class ProcessData(Database):
         """
         # Bringing raw data from the mongoDB
         super().__init__(processed)
-        selected_collection = self.select_collection(processed)
+        selected_collection, self.collection_name = self.select_collection(processed)
         self.df = self.collect_raw_data(selected_collection)[0]
 
         # Essential data preprocessing (cleaning and summarizing features into less columns)
@@ -42,6 +42,7 @@ class ProcessData(Database):
             Dataframe with no duplicated transactions.
 
         """
+        # print(self.df)
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(
@@ -206,7 +207,7 @@ class ProcessData(Database):
                                                                                 Low="min",
                                                                                 Close="last"
                                                                         ).shift(1, freq=self.frequency)
-        return self.dataPx
+        return self.dataPx, self.collection_name, self.frequency
 
     def create_dataframe(self, dataset):
         """

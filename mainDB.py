@@ -55,18 +55,45 @@ if __name__ == "__main__":
                                                               'usdTotal', 'ContractsTraded_size',
                                                               'ContractsTraded_grossValue']).fillna(0)
             processed_transactions = initial_data.counter_grouper(cols=['side']).fillna(0)
-            processed_ohcl = initial_data.ohcl()
+            processed_ohcl, collection_name, frequency = initial_data.ohcl()
             processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
-            print(processed_data)
 
         else:
             db = Database(processed=False)
-            selected_collection = db.select_collection(processed=False)
+            selected_collection = db.select_collection(processed=False)[0]
             raw_data = db.collect_raw_data(selected_collection)
-            print('--->raw_data', raw_data)
-            # raw_data[0].to_csv(f'data.nosync/RAW_{raw_data[1]}.gz', compression='gzip')
-            # print(f'Your csv file containing data for {raw_data[1]} has been created successfully. '
-            #       f'Check your data folder!')
+
+
+        print('Do you want to store your data as a CSV file (YES/NO)?')
+        while True:
+            try:
+                csv_file = str(input()).lower()
+            except ValueError:
+                print("Sorry, I didn't understand that. Please, try again")
+
+            if csv_file == 'yes':
+                break
+            elif csv_file == 'no':
+                break
+            else:
+                print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
+
+        if csv_file == 'yes' and processed == 'processed':
+            processed_data.to_csv(f'data.nosync/{collection_name}.gz', compression='gzip')
+            print(
+                f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created successfully. '
+                f'Check your data folder!')
+        elif csv_file == 'yes':
+            raw_data[0].to_csv(f'data.nosync/{raw_data[1]}.gz', compression='gzip')
+            print(f'Your csv file containing data for {raw_data[1]} has been created successfully. '
+                  f'Check your data folder!')
+        else:
+            print('Ok! I will just show the data:')
+            try:
+                print('--->processed_data\n', processed_data)
+            except NameError:
+                print('--->raw_data\n', raw_data)
+
 
 
 
@@ -101,13 +128,13 @@ if __name__ == "__main__":
 
     elif userChoice == 3:
         db = Database()
-        selected_collection = db.select_collection(processed='')
+        selected_collection = db.select_collection(processed='')[0]
         current_data = db.show_stored_dates(selected_collection)
         print(f'You have data for {len(current_data)} days:', current_data)
 
     elif userChoice == 4:
         db = Database()
-        selected_collection = db.select_collection(processed='')
+        selected_collection = db.select_collection(processed='')[0]
         warnings = db.find_missing_data(selected_collection)
         print('You should double-check the data for these dates: ', warnings)
 
