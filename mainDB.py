@@ -58,6 +58,8 @@ if __name__ == "__main__":
             processed_ohcl, collection_name, frequency = initial_data.ohcl()
             processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
 
+        #     Hacer push de processed data??
+
         else:
             db = Database(processed=False)
             selected_collection = db.select_collection(processed=False)[0]

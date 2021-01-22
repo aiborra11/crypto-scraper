@@ -268,6 +268,7 @@ class Database(object):
             else:
                 break
 
+        # Generating the interval of dates we are going to scrape
         if interval == 'origin':
             print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning: 20141122.')
 
@@ -328,24 +329,26 @@ class Database(object):
             print('Updating interval: ', interval_to_update)
 
         # Scraping data from bitmex and inserting it into our collection
-        data, warnings, crypto = data_scraper(interval_to_update, self.collection_name)
-        if warnings:
-            print(f'You should double-check {warnings} since we could not find any data.')
-        else:
-            print('Perfect! We collected data for every required date. 0 warnings found.')
-        if self.processed:
-            # Storing also the already collected raw data into a new collection
-            self.database_name.create_collection(f'{crypto}_RAW')
-            selected_collection_raw = self.database_name[f'{crypto}_RAW']
+        cryptos = self.collection_name.split('_')
+        dataset = pd.read_csv(
+            f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{interval_to_update[-1]}.csv.gz')
+        # Cleaning the name of the cryptocurrency to use it as a filter
+        crypto = [crypt for crypt in cryptos if crypt in dataset['symbol'].unique()][0]
+
+        # Storing the already collected raw data into a new collection
+        self.database_name.create_collection(f'{crypto}_RAW')
+        selected_collection_raw = self.database_name[f'{crypto}_RAW']
+        warnings = []
+        for date in tqdm(interval_to_update):
+            data, warning, crypto = data_scraper(date, crypto)
+            warnings.append(warnings)
             self.push_data_into_db(data, selected_collection_raw, processed=False)
-            return self.push_data_into_db(data, selected_collection, processed=True)
-        else:
-            self.database_name.create_collection(f'{crypto}_RAW')
-            selected_collection_raw = self.database_name[f'{crypto}_RAW']
-            return self.push_data_into_db(data, selected_collection_raw, processed=False)
+        return print(f'You have {len(warnings)} missing dates in {crypto}_RAW. You should double-check them!\n',
+                     warnings)
+
 
     @staticmethod
-    def push_data_into_db(available_data, db_collection, processed=False, date=''):
+    def push_data_into_db(available_data, db_collection, processed=False):
         """
         Inserts scraped data into our selected collection and database.
 
@@ -368,7 +371,8 @@ class Database(object):
                 available_data = available_data.to_dict(orient='records')
                 db_collection.insert_many(available_data)
             except:
-                print(f'There is no available data for the date: ', date)
+                pass
+                # print(f'There is no available data for the date: ', date)
 
         else:
             # Converting scraped data into a format required for inserting data into mongodb
@@ -377,7 +381,8 @@ class Database(object):
             try:
                 db_collection.insert_many(available_data)
             except:
-                print(f'There is no available data for the date: ', date)
+                pass
+                # print(f'There is no available data for the date: ', date)
 
     def find_missing_data(self, selected_collection):
         """
@@ -484,6 +489,7 @@ class Database(object):
             if self.collection_name.lower() == 'yes':
                 self.collection_name = str(coll_prov[-2])
                 self.populate_collection(selected_collection_raw)
+                # TODO BLOWS HERE BECAUSE .FIND REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
                 raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
                 return raw_df, self.collection_name
 

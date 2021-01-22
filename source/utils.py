@@ -35,7 +35,7 @@ def interval_to_scrape(day1='20141122', max_date=''):
             dates.append(next_day_format)
     return dates
 
-def data_scraper(interval_to_update, crypto=''):
+def data_scraper(date, crypto=''):
     """
     Iterates through a list of dates scraping the data for the specified cryptocurrency.
 
@@ -51,19 +51,34 @@ def data_scraper(interval_to_update, crypto=''):
 
     """
 
-    cryptos_info = crypto.split('_')
+    # cryptos_info = crypto.split('_')
     crypto_data = pd.DataFrame()
     warnings = []
-    for date in tqdm(interval_to_update):
-        try:
-            # Scraping data
-            dataset = pd.read_csv(
-                f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
-            # Cleaning the name of the cryptocurrency to use it as a filter
-            crypto = [crypt for crypt in cryptos_info if crypt in dataset['symbol'].unique()][0]
-            crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
-        except:
-            # Adding dates we cannot get data and return it for warnings
-            warnings.append(date)
+    try:
+        # Scraping data
+        dataset = pd.read_csv(
+            f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
+        # Cleaning the name of the cryptocurrency to use it as a filter
+        # crypto = [crypt for crypt in cryptos_info if crypt in dataset['symbol'].unique()][0]
+        crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
+    except:
+        # Adding dates we cannot get data and return it for warnings
+        warnings.append(date)
     return crypto_data, warnings, crypto
+
+    # cryptos_info = crypto.split('_')
+    # crypto_data = pd.DataFrame()
+    # warnings = []
+    # for date in tqdm(interval_to_update):
+    #     try:
+    #         # Scraping data
+    #         dataset = pd.read_csv(
+    #             f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
+    #         # Cleaning the name of the cryptocurrency to use it as a filter
+    #         crypto = [crypt for crypt in cryptos_info if crypt in dataset['symbol'].unique()][0]
+    #         crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
+    #     except:
+    #         # Adding dates we cannot get data and return it for warnings
+    #         warnings.append(date)
+    # return crypto_data, warnings, crypto
 
