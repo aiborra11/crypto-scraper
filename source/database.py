@@ -341,7 +341,7 @@ class Database(object):
         warnings = []
         for date in tqdm(interval_to_update):
             data, warning, crypto = data_scraper(date, crypto)
-            warnings.append(warnings)
+            if warning: warnings.append(warning)
             self.push_data_into_db(data, selected_collection_raw, processed=False)
         return print(f'You have {len(warnings)} missing dates in {crypto}_RAW. You should double-check them!\n',
                      warnings)

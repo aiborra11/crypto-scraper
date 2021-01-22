@@ -60,7 +60,9 @@ def data_scraper(date, crypto=''):
             f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{date}.csv.gz')
         # Cleaning the name of the cryptocurrency to use it as a filter
         # crypto = [crypt for crypt in cryptos_info if crypt in dataset['symbol'].unique()][0]
-        crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
+        # crypto_data = pd.concat([crypto_data, dataset[dataset['symbol'] == crypto]])
+        crypto_data = dataset[dataset['symbol'] == crypto]
+
     except:
         # Adding dates we cannot get data and return it for warnings
         warnings.append(date)
