@@ -62,8 +62,12 @@ if __name__ == "__main__":
 
         else:
             db = Database(processed=False)
-            selected_collection = db.select_collection(processed=False)[0]
-            raw_data = db.collect_raw_data()
+            selected_collection, crypto, new_raw = db.select_collection(processed=False)
+            if new_raw:
+                dates_interval, crypto = db.dates_to_collect(selected_collection)
+            else:
+                dates_interval = ''
+            raw_data = db.collect_raw_data(selected_collection, crypto, dates_interval)
 
         print('Do you want to store your data as a CSV file (YES/NO)?')
         while True:

@@ -144,6 +144,7 @@ class Database(object):
             else:
                 print('Something went wrong! Please, try again.')
 
+        self.new_raw = False
         # If we had the collection already (either processed or raw) in our db
         if self.collection_name in available_data:
             if self.processed:
@@ -152,7 +153,7 @@ class Database(object):
                 pass
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data.")
-            return self.database_name[self.collection_name], self.collection_name
+            return self.database_name[self.collection_name], self.collection_name, self.new_raw
 
         # To generate a new collection storing PROCESSED data for a new crypto
         elif self.collection_name not in available_data and self.processed:
@@ -171,65 +172,15 @@ class Database(object):
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data")
             self.collection_name = f'{self.frequency}_{self.collection_name}_PROCESSED'
-            return self.database_name[self.collection_name], self.collection_name
+            return self.database_name[self.collection_name], self.collection_name, self.new_raw
 
         # To generate a new collection storing RAW data for a new crypto
         elif self.collection_name not in available_data:
-            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
-                  f"data")
-            return self.database_name[self.collection_name], self.collection_name
-
-    def remove_collection(self, collection=''):
-        """
-        Shows the available collections and asks to delete any collections we are no longer interested in storing
-        into our database.
-
-        Arguments:
-        ----------
-        collection {[str]} -- In case we know the collection we want to delete
-
-        Returns:
-        --------
-            Drops a stored collection
-
-        """
-        if collection:
-            self.database_name[collection].drop()
-            print(f'The database {collection} has been deleted successfully!')
-
-        else:
-            print(f'Available collections for this database: {self.show_available_collections()}')
-            print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
-            collections = str(input())
-
-            if collections == 'all':
-                print('We are preparing all available collections: ', collections)
-                for collection in tqdm(self.show_available_collections()):
-                    self.database_name[collection].drop()
-
-            elif len(collections) > 1:
-                collections_date = collections.replace(',', '').replace("'", '').split(' ')
-                print("We are deleting the collections you've selected: ", collections_date)
-                for collection in tqdm(sorted(collections_date)):
-                    self.database_name[collection].drop()
-
-            else:
-                print("We are deleting the collection you've selected: ", collections)
-                self.database_name[collections].drop()
-
-    def show_available_collections(self):
-        """
-         Shows a list of available collections we can find inside the selected database
-
-         Arguments:
-         ----------
-         ()
-         Returns:
-         --------
-            Our stored collections in the db we have connected
-        """
-        available_data = sorted(self.database_name.list_collection_names())
-        return available_data
+            print(f"You do not have previous data for {self.collection_name}, so we are going to generate a new "
+                  f"collection per day storing raw data in the following format:\n"
+                  f"'YYYYMMDD_{self.collection_name}_RAW'")
+            self.new_raw = True
+            return self.database_name, self.collection_name, self.new_raw
 
     def dates_to_collect(self, selected_collection):
         """
@@ -248,7 +199,7 @@ class Database(object):
             List containing the interval of dates and name of the crypto we are willing to collect
         """
 
-        print("\nIf you'd like to store all the available data into your DB, write: 'ORIGIN'.")
+        print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
         print("If you'd like to update your DB, write: 'UPDATE'.")
         print("To store data for a specific interval write: 'INTERVAL'.")
         print("To store ONLY a CONCRETE period, write: CONCRETE.")
@@ -336,7 +287,95 @@ class Database(object):
 
         return interval_to_update, crypto
 
-    def populate_collection(self, interval_to_update, crypto):
+    def collect_raw_data(self, selected_collection, crypto, dates_interval=''):
+        """
+        Checks if we have previous raw data for our desired crypto. In case we do, it retrieves the data,
+        in case we don't it scrapes it and generates a new collections where pushing the new raw data.
+
+        Arguments:
+        ----------
+        dates_interval {[list]} -- List of dates we are willing to collect.
+        crypto {[str]} -- Cryptocurrency we are interested in.
+
+        Returns:
+        --------
+            {[raw_df]}
+                Dataframe containing raw data for the desired cryptocurrency.
+            {[self.collection_name]}
+                Name of the crypto
+        """
+        # Connecting to the raw data collection
+        # raw_df = pd.DataFrame()
+        # for num, date in enumerate(dates_interval):
+        #     raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
+        #     # Grouping collections and generating df by groups to improve performance.
+        #     if (num % 100 == 0) & (num > 0):
+        #         get_data(raw_df, frequency)
+        #         df_raw = pd.DataFrame()
+        #
+        #     elif date == dates_interval[0][-1]:
+        #         print('collecting data...')
+        #         get_data(raw_df, frequency)
+        #
+        #     else:
+        #         pass
+
+        # selected_collection_raw = self.database_name[f'{date}_{crypto}_RAW']
+        # To generate new collections storing RAW data
+        if self.new_raw:
+            db = self.database_name
+            self.populate_collection(dates_interval, crypto, db)
+
+        else:
+            raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
+            # In case we do not have any previous raw data for this crypto
+            if raw_df.empty:
+                interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
+                cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
+                                      f'{interval}.csv.gz')
+                print('We could not retrieve any data since you do not have any for this cryptocurrency. '
+                      f'\nWrite "yes" to store data for {self.collection_name} in your db'
+                      f'\nOtherwise, write the correct name')
+
+                coll_prov = [self.collection_name]
+                while True:
+                    try:
+                        self.collection_name = str(input()).upper()
+                        coll_prov.append(self.collection_name)
+                    except ValueError:
+                        print("Sorry, I didn't understand that. Please, try again")
+                        continue
+                    if self.collection_name.lower() == 'yes':
+                        break
+                    elif self.collection_name not in cryptos['symbol'].unique():
+                        print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
+                        continue
+                    elif self.collection_name in self.show_available_collections():
+                        coll_prov.append(self.collection_name)
+                        break
+                    else:
+                        coll_prov.append(self.collection_name)
+                        continue
+
+                # Populating db before retrieving raw data
+                if self.collection_name.lower() == 'yes':
+                    self.collection_name = str(coll_prov[-2])
+                    interval_to_update, crypto = self.dates_to_collect(selected_collection)
+                    self.populate_collection(interval_to_update, crypto)
+                    # TODO BLOWS HERE BECAUSE .find() REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
+
+                    raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
+                    return raw_df, self.collection_name
+
+                else:
+                    print('something went wrong!')
+                    quit()
+            # We have previous raw data for this crypto
+            else:
+                print(f'Collecting your raw dataset for {self.collection_name}...')
+                return raw_df, self.collection_name
+
+    def populate_collection(self, interval_to_update, crypto, db=''):
         """
         Push data into the database. In case we do not have any it will create the drypto_RAW collection
         and push data into it.
@@ -352,20 +391,20 @@ class Database(object):
 
         """
         # Storing the already collected raw data into a new collection
-        self.database_name.create_collection(f'{crypto}_RAW')
-        selected_collection_raw = self.database_name[f'{crypto}_RAW']
+        # self.db_collection.create_collection(f'{crypto}_RAW')
+        # selected_collection_raw = self.db_collection[f'{crypto}_RAW']
         warnings = []
+        db_collection = db
         for date in tqdm(interval_to_update):
             data, warning, crypto = data_scraper(date, crypto)
             if warning: warnings.append(warning)
-            self.push_data_into_db(data, selected_collection_raw, processed=False)
-        #     TODO PROCESS DATA HERE AND PUSH TO PROCESSED
+            self.push_data_into_db(data, db_collection, date, crypto, processed=False)
 
         return print(f'You have {len(warnings)} missing dates in {crypto}_RAW. You should double-check them!\n',
                      warnings)
 
     @staticmethod
-    def push_data_into_db(available_data, db_collection, processed=False):
+    def push_data_into_db(available_data, db_collection, date, crypto, processed=False):
         """
         Inserts scraped data into our selected collection and database.
 
@@ -387,19 +426,75 @@ class Database(object):
                 print(f'Pushing processed data into your collection')
                 available_data = available_data.to_dict(orient='records')
                 db_collection.insert_many(available_data)
+                # self.database_name[f'{frequency}_{crypto}_PROCESSED'].insert_many(available_data)
             except:
                 pass
                 # print(f'There is no available data for the date: ', date)
 
         else:
+
             # Converting scraped data into a format required for inserting data into mongodb
             available_data = available_data[[col for col in available_data.columns if col != 'symbol']]
             available_data = available_data.to_dict(orient='records')
             try:
-                db_collection.insert_many(available_data)
+                db_collection[f'{date}_{crypto}_RAW'].insert_many(available_data)
+                # self.database_name[f'{date}_{crypto}_RAW'].insert_many(available_data)
+
             except:
                 pass
                 # print(f'There is no available data for the date: ', date)
+
+    def remove_collection(self, collection=''):
+        """
+        Shows the available collections and asks to delete any collections we are no longer interested in storing
+        into our database.
+
+        Arguments:
+        ----------
+        collection {[str]} -- In case we know the collection we want to delete
+
+        Returns:
+        --------
+            Drops a stored collection
+
+        """
+        if collection:
+            self.database_name[collection].drop()
+            print(f'The database {collection} has been deleted successfully!')
+
+        else:
+            print(f'Available collections for this database: {self.show_available_collections()}')
+            print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
+            collections = str(input())
+
+            if collections == 'all':
+                print('We are preparing all available collections: ', collections)
+                for collection in tqdm(self.show_available_collections()):
+                    self.database_name[collection].drop()
+
+            elif len(collections) > 1:
+                collections_date = collections.replace(',', '').replace("'", '').split(' ')
+                print("We are deleting the collections you've selected: ", collections_date)
+                for collection in tqdm(sorted(collections_date)):
+                    self.database_name[collection].drop()
+
+            else:
+                print("We are deleting the collection you've selected: ", collections)
+                self.database_name[collections].drop()
+
+    def show_available_collections(self):
+        """
+         Shows a list of available collections we can find inside the selected database
+
+         Arguments:
+         ----------
+         ()
+         Returns:
+         --------
+            Our stored collections in the db we have connected
+        """
+        available_data = sorted(self.database_name.list_collection_names())
+        return available_data
 
     def find_missing_data(self, selected_collection):
         """
@@ -448,76 +543,6 @@ class Database(object):
         actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
         return actual_dates
 
-    def collect_raw_data(self):
-        """
-        Checks if we have previous raw data for our desired crypto. In case we do, it retrieves the data,
-        in case we don't it scrapes it and generates a new collections where pushing the new raw data.
-
-        Arguments:
-        ----------
-        ()
-
-        Returns:
-        --------
-            {[raw_df]}
-                Dataframe containing raw data for the desired cryptocurrency.
-            {[self.collection_name]}
-                Name of the crypto
-        """
-        # Cleaning the name of the crypto from other metadata (frequency, processed, raw)
-        self.collection_name = self.collection_name.split('_')[1] if self.processed else self.collection_name.split('_')[0]
-        # Connecting to the raw data collection
-        selected_collection_raw = self.database_name[f'{self.collection_name}_RAW']
-
-
-        raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
-
-        # In case we do not have any previous raw data for this crypto
-        if raw_df.empty:
-            interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
-            cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
-                                  f'{interval}.csv.gz')
-            print('We could not retrieve any data since you do not have any for this cryptocurrency. '
-                  f'\nWrite "yes" to store data for {self.collection_name} in your db'
-                  f'\nOtherwise, write the correct name')
-
-            coll_prov = [self.collection_name]
-            while True:
-                try:
-                    self.collection_name = str(input()).upper()
-                    coll_prov.append(self.collection_name)
-                except ValueError:
-                    print("Sorry, I didn't understand that. Please, try again")
-                    continue
-                if self.collection_name.lower() == 'yes':
-                    break
-                elif self.collection_name not in cryptos['symbol'].unique():
-                    print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
-                    continue
-                elif self.collection_name in self.show_available_collections():
-                    coll_prov.append(self.collection_name)
-                    break
-                else:
-                    coll_prov.append(self.collection_name)
-                    continue
-
-            # Populating db before retrieving raw data
-            if self.collection_name.lower() == 'yes':
-                self.collection_name = str(coll_prov[-2])
-                interval_to_update, crypto = self.dates_to_collect(selected_collection_raw)
-                self.populate_collection(interval_to_update, crypto)
-                # TODO BLOWS HERE BECAUSE .find() REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
-
-                raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
-                return raw_df, self.collection_name
-
-            else:
-                print('something went wrong!')
-                quit()
-        # We have previous raw data for this crypto
-        else:
-            print(f'Collecting your raw dataset for {self.collection_name}...')
-            return raw_df, self.collection_name
 
     # def store_processed_data(self, processed_data):
     #     """
