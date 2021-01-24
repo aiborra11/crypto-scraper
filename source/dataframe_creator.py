@@ -42,6 +42,7 @@ class ProcessData(Database):
             Dataframe with no duplicated transactions.
 
         """
+        print(self.df)
         self.df = self.df[self.df['timestamp'].notna()]
         self.noDuplicates = self.df.drop_duplicates(subset=None, keep='first')
         self.noDuplicates['timestamp'] = self.noDuplicates['timestamp'].map(

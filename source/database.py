@@ -231,9 +231,9 @@ class Database(object):
         available_data = sorted(self.database_name.list_collection_names())
         return available_data
 
-    def populate_collection(self, selected_collection):
+    def dates_to_collect(self, selected_collection):
         """
-        Populates our collection according to our desired format. We can choose between:
+        Generates a interval of dates we are willing to collect. We can choose between:
             a) Origin: Collect all data since the very beginning
             b) Update: Checks our last available record and updates from there till yesterday.
             c) Interval: Collects data for a specific interval of time.
@@ -245,8 +245,7 @@ class Database(object):
 
         Returns:
         --------
-            Populated collection with the data we have specified.
-
+            List containing the interval of dates and name of the crypto we are willing to collect
         """
 
         print("\nIf you'd like to store all the available data into your DB, write: 'ORIGIN'.")
@@ -335,6 +334,23 @@ class Database(object):
         # Cleaning the name of the cryptocurrency to use it as a filter
         crypto = [crypt for crypt in cryptos if crypt in dataset['symbol'].unique()][0]
 
+        return interval_to_update, crypto
+
+    def populate_collection(self, interval_to_update, crypto):
+        """
+        Push data into the database. In case we do not have any it will create the drypto_RAW collection
+        and push data into it.
+
+        Arguments:
+        ----------
+        interval_to_update {[list]} --  Interval of dates we are going to scrape.
+        crypto {[str]} --  Name of the cryptocurrency we are willing to scrape.
+
+        Returns:
+        --------
+        Data pushed into our db and missing dates we could not retrieve any data.
+
+        """
         # Storing the already collected raw data into a new collection
         self.database_name.create_collection(f'{crypto}_RAW')
         selected_collection_raw = self.database_name[f'{crypto}_RAW']
@@ -343,9 +359,10 @@ class Database(object):
             data, warning, crypto = data_scraper(date, crypto)
             if warning: warnings.append(warning)
             self.push_data_into_db(data, selected_collection_raw, processed=False)
+        #     TODO PROCESS DATA HERE AND PUSH TO PROCESSED
+
         return print(f'You have {len(warnings)} missing dates in {crypto}_RAW. You should double-check them!\n',
                      warnings)
-
 
     @staticmethod
     def push_data_into_db(available_data, db_collection, processed=False):
@@ -418,15 +435,12 @@ class Database(object):
     def show_stored_dates(self, selected_collection):
         """
         Brings all unique timestamp data for the specified cryptocurrencies.
-
         Arguments:
         ----------
         selected_collection {[str]} --  client connected to our db and collection
-
         Returns:
         --------
             Dates with available data
-
         """
         # Filtering by timestamp is the only datapoint we actually need
         print('Checking your current stored data...')
@@ -454,6 +468,8 @@ class Database(object):
         self.collection_name = self.collection_name.split('_')[1] if self.processed else self.collection_name.split('_')[0]
         # Connecting to the raw data collection
         selected_collection_raw = self.database_name[f'{self.collection_name}_RAW']
+
+
         raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
 
         # In case we do not have any previous raw data for this crypto
@@ -488,8 +504,10 @@ class Database(object):
             # Populating db before retrieving raw data
             if self.collection_name.lower() == 'yes':
                 self.collection_name = str(coll_prov[-2])
-                self.populate_collection(selected_collection_raw)
-                # TODO BLOWS HERE BECAUSE .FIND REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
+                interval_to_update, crypto = self.dates_to_collect(selected_collection_raw)
+                self.populate_collection(interval_to_update, crypto)
+                # TODO BLOWS HERE BECAUSE .find() REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
+
                 raw_df = pd.DataFrame(list(selected_collection_raw.find({}, {'_id': 0})))
                 return raw_df, self.collection_name
 
