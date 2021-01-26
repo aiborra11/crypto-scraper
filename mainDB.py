@@ -133,10 +133,26 @@ if __name__ == "__main__":
         print(f'The collection has been removed successfully from the database.')
 
     elif userChoice == 3:
+        print('What do you want to check? PROCESSED, RAW or ALL data?')
+        while True:
+            try:
+                processed = str(input()).lower()
+            except ValueError:
+                print("Sorry, I didn't understand that. Please, try again")
+
+            if processed == 'processed':
+                break
+            elif processed == 'raw':
+                break
+            elif processed == 'all':
+                break
+            else:
+                print("Sorry, I didn't understand that. Please, write PROCESSED or RAW")
+
+        processed = processed
         db = Database()
-        selected_collection = db.select_collection(processed='')[0]
-        current_data = db.show_stored_dates(selected_collection)
-        print(f'You have data for {len(current_data)} days:', current_data)
+        selected_collection = db.select_collection(processed='')
+        current_data = db.show_stored_dates(processed)
 
     elif userChoice == 4:
         db = Database()

@@ -1,6 +1,7 @@
 import pandas as pd
 import pymongo
 
+from collections import defaultdict
 from tqdm import tqdm
 from os import listdir
 from pymongo import MongoClient
@@ -101,7 +102,7 @@ class Database(object):
 
         # Filtering available PROCESSED/RAW collections
         if self.processed == '':
-            print(f'These are your current stored collections inside your "{self.db_name}" database:', available_data)
+            return print(f'These are your current stored collections inside your "{self.db_name}" database:\n', available_data)
 
         # PROCESSED collections
         elif self.processed:
@@ -527,21 +528,68 @@ class Database(object):
         print(f'You have {len(missing_dates)} warnings.')
         return sorted(list(missing_dates))
 
-    def show_stored_dates(self, selected_collection):
+
+    def show_stored_dates(self, processed):
         """
-        Brings all unique timestamp data for the specified cryptocurrencies.
+        Basing on the name of the collections we have stored in our DB, it
+        shows our available data per currency.
+        It also counts how many days of data we have stored in our db.
+
         Arguments:
         ----------
-        selected_collection {[str]} --  client connected to our db and collection
+        processed {[str]} --  Flag to filter by processed, raw or all data
+
         Returns:
         --------
-            Dates with available data
+        Dictionary where key=crypto, value= list of dates.
         """
-        # Filtering by timestamp is the only datapoint we actually need
-        print('Checking your current stored data...')
-        dates = selected_collection.find({}, {'_id': 0, 'timestamp': 1})
-        actual_dates = sorted(set([str(d['timestamp']).split('D')[0].replace('-', '') for d in dates]))
-        return actual_dates
+
+        crypto_dict = {}
+        available_data = self.show_available_collections()
+        if processed == 'raw':
+            available_data = [x for x in available_data if x.split('_')[-1].lower() == processed]
+            crypt_data = [(x.split('_')[1] + '_' + x.split('_')[2], x.split('_')[0]) for x in available_data]
+            if available_data:
+                crypto_dict = defaultdict(list)
+                for crypt, date in crypt_data:
+                    crypto_dict[crypt].append(date)
+
+                print(f'\nYou have {processed.upper()} data for:', sorted(list(crypto_dict.keys())))
+                for i in range(len(sorted(crypto_dict))):
+                    print('\n', list(crypto_dict.items())[i])
+                    print(f'You have data for {len(list(crypto_dict.items())[i][1])} days.')
+            else:
+                print(f'You do not have any {processed.upper()} data collection yet.')
+
+        elif processed == 'processed':
+            available_data = [x for x in available_data if x.split('_')[-1].lower() == processed]
+            if available_data:
+                print('\nSelect the PROCESSED collection you want to check from the following list:', available_data)
+                while True:
+                    try:
+                        collection_name = str(input()).upper()
+                    except ValueError:
+                        print("Sorry, I didn't understand that.")
+                        continue
+
+                    if collection_name in available_data:
+                        break
+                    else:
+                        print('Sorry, something went wrong! Please, try again.')
+
+                selected_collection = self.database_name[collection_name]
+                available_dates = list(selected_collection.find().sort('timestamp', pymongo.ASCENDING))
+                if available_dates:
+                    print(f'Your collection {collection_name} available dates are on:, ', available_dates)
+                    crypto_dict[selected_collection]=available_dates
+                else:
+                    print(f'Sorry, your collection {collection_name} seems to be empty.')
+            else:
+                print(f'You do not have any {processed.upper()} data collection yet.')
+        else:
+            print('Sorry, something went wrong!')
+
+        return crypto_dict
 
 
     # def store_processed_data(self, processed_data):
