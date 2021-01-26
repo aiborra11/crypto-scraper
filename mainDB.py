@@ -2,7 +2,7 @@ import pandas as pd
 
 from source.database import Database
 from source.dataframe_creator import ProcessData
-
+from source.utils import csv_converter
 
 # 20190303
 
@@ -63,43 +63,51 @@ if __name__ == "__main__":
         else:
             db = Database(processed=False)
             selected_collection, crypto, new_raw = db.select_collection(processed=False)
-            if new_raw:
-                dates_interval, crypto = db.dates_to_collect(selected_collection)
+            dates_interval, crypto = db.dates_to_collect(selected_collection)
+
+            print('Do you want to store your data as a CSV file (YES/NO)?')
+            while True:
+                try:
+                    csv_file = str(input()).lower()
+                except ValueError:
+                    print("Sorry, I didn't understand that. Please, try again")
+
+                if csv_file == 'yes':
+                    csv_file = 'yes'
+                    break
+                elif csv_file == 'no':
+                    break
+                else:
+                    print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
+
+            if len(dates_interval) <= 90:
+                raw_data = db.collect_raw_data(selected_collection, crypto, dates_interval)
+                csv_converter(raw_data, raw_data, frequency='', csv_file=csv_file, processed=False)
+
             else:
-                dates_interval = ''
-            raw_data = db.collect_raw_data(selected_collection, crypto, dates_interval)
+                dates_interval = [dates_interval[i:i + 90] for i in range(0, len(dates_interval), 90)]
+                raw_data = pd.DataFrame()
+                for intervals in dates_interval:
+                    raw_data = db.collect_raw_data(selected_collection, crypto, intervals)[0]
 
-        print('Do you want to store your data as a CSV file (YES/NO)?')
-        while True:
-            try:
-                csv_file = str(input()).lower()
-            except ValueError:
-                print("Sorry, I didn't understand that. Please, try again")
 
-            if csv_file == 'yes':
-                break
-            elif csv_file == 'no':
-                break
-            else:
-                print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
-
-        if csv_file == 'yes' and processed == 'processed':
-            print(processed_data)
-            processed_data.to_csv(f'data.nosync/{frequency}_{collection_name}_PROCESSED.gz', compression='gzip')
-            print(
-                f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created '
-                f'successfully. Check your data folder!')
-        elif csv_file == 'yes':
-            print(raw_data)
-            raw_data[0].to_csv(f'data.nosync/{raw_data[1]}_RAW.gz', compression='gzip')
-            print(f'Your csv file containing data for {raw_data[1]}_RAW has been created successfully. '
-                  f'Check your data folder!')
-        else:
-            print('Ok! I will just show the data:')
-            try:
-                print('--->processed_data<---\n', processed_data)
-            except NameError:
-                print('--->raw_data<---\n', raw_data[0])
+        # if csv_file == 'yes' and processed == 'processed':
+        #     print(processed_data)
+        #     processed_data.to_csv(f'data.nosync/{frequency}_{collection_name}_PROCESSED.gz', compression='gzip')
+        #     print(
+        #         f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created '
+        #         f'successfully. Check your data folder!')
+        # elif csv_file == 'yes':
+        #     print(raw_data)
+        #     raw_data[0].to_csv(f'data.nosync/{raw_data[1]}_RAW.gz', compression='gzip')
+        #     print(f'Your csv file containing data for {raw_data[1]}_RAW has been created successfully. '
+        #           f'Check your data folder!')
+        # else:
+        #     print('Ok! I will just show the data:')
+        #     try:
+        #         print('--->processed_data<---\n', processed_data)
+        #     except NameError:
+        #         print('--->raw_data<---\n', raw_data[0])
 
 
 

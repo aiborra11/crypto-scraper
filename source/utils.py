@@ -64,3 +64,25 @@ def data_scraper(date, crypto=''):
         # Adding dates we cannot get data and return it for warnings
         warnings.append(date)
     return crypto_data, warnings, crypto
+
+
+def csv_converter(data, collection_name, frequency, csv_file, processed=False):
+
+    if csv_file == 'yes' and processed == 'processed':
+        data.to_csv(f'data.nosync/{frequency}_{collection_name}_PROCESSED.gz', compression='gzip')
+        print(
+            f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created '
+            f'successfully. Check your data folder!')
+    elif csv_file == 'yes':
+        print(data)
+        data[0].to_csv(f'data.nosync/{data[1]}_RAW.gz', compression='gzip')
+        print(f'Your csv file containing data for {data[1]}_RAW has been created successfully. '
+              f'Check your data folder!')
+    else:
+        print('Ok! I will just show the data:')
+        try:
+            print('--->processed_data<---\n', data)
+        except NameError:
+            print('--->raw_data<---\n', data[0])
+
+    return data

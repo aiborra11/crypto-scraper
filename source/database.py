@@ -419,8 +419,6 @@ class Database(object):
 
         """
         # Storing the already collected raw data into a new collection
-        # self.db_collection.create_collection(f'{crypto}_RAW')
-        # selected_collection_raw = self.db_collection[f'{crypto}_RAW']
         warnings = []
         db_collection = db
         for date in tqdm(interval_to_update):
