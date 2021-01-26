@@ -133,7 +133,7 @@ if __name__ == "__main__":
         print(f'The collection has been removed successfully from the database.')
 
     elif userChoice == 3:
-        print('What do you want to check? PROCESSED, RAW or ALL data?')
+        print('What do you want to check? PROCESSED or RAW data?')
         while True:
             try:
                 processed = str(input()).lower()
@@ -144,20 +144,40 @@ if __name__ == "__main__":
                 break
             elif processed == 'raw':
                 break
-            elif processed == 'all':
+            else:
+                print("Sorry, I didn't understand that. Please, write PROCESSED or RAW")
+
+        processed = processed
+        db = Database()
+        selected_collection= db.select_collection(processed='')
+        current_data = db.show_stored_dates(processed)
+
+    elif userChoice == 4:
+        print('What do you want to check? PROCESSED or RAW data?')
+        while True:
+            try:
+                processed = str(input()).lower()
+            except ValueError:
+                print("Sorry, I didn't understand that. Please, try again")
+
+            if processed == 'processed':
+                break
+            elif processed == 'raw':
                 break
             else:
                 print("Sorry, I didn't understand that. Please, write PROCESSED or RAW")
 
         processed = processed
         db = Database()
-        selected_collection = db.select_collection(processed='')
-        current_data = db.show_stored_dates(processed)
 
-    elif userChoice == 4:
-        db = Database()
-        selected_collection = db.select_collection(processed='')[0]
-        warnings = db.find_missing_data(selected_collection)
+        # if processed='raw', put processed='' in select_collection() and ask for crypto, else processed=processed
+        if processed == 'raw':
+            selected_collection = db.select_collection(processed='')
+
+        else:
+            selected_collection, crypto, new_raw = db.select_collection(processed=processed)
+
+        warnings = db.find_missing_data(selected_collection, crypto='')
         print('You should double-check the data for these dates: ', warnings)
 
     elif userChoice == 5:

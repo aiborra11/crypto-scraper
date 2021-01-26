@@ -497,7 +497,7 @@ class Database(object):
         available_data = sorted(self.database_name.list_collection_names())
         return available_data
 
-    def find_missing_data(self, selected_collection):
+    def find_missing_data(self, selected_collection, crypto=''):
         """
         Checks missing dates into our collection
 
@@ -515,15 +515,39 @@ class Database(object):
         print('Checking if you have missing data...')
 
         # Finding out first available record in our collection...
-        first_record = selected_collection.find().sort('timestamp', pymongo.ASCENDING).limit(1)
-        first_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in first_record][0]
-        print('Your first record is from:', first_date)
+        if self.processed:
+            actual_dates = selected_collection.find().sort('timestamp', pymongo.ASCENDING)
+            first_record = actual_dates[0]
+            print(first_record)
+            print(f'Your first record for {self.collection_name} is from:')
+            first_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in first_record][0]
+            print(f'Your first record for {self.collection_name} is from:', first_date)
 
-        # Filtering by timestamp is the only datapoint we actually need
-        actual_dates = self.show_stored_dates(selected_collection)
+        else:
+            # Bringing crypto dictionary containing key=crypto, value=list of available dates
+            crypto_dict = self.show_stored_dates(processed='raw')
+            available_data = sorted(list(crypto_dict.keys()))
+            print(f'\nChoose the crypto you want to check for warnings:')
+            while True:
+                try:
+                    crypto = str(input()).upper()
+                except ValueError:
+                    print("Sorry, I didn't understand that. Please, try again")
 
-        # Comparing real datapoints we should currently have from our first record until today's date
+                if crypto in available_data:
+                    break
+
+                else:
+                    print("Sorry, I didn't understand that. Please, copy and paste from the above list the name of the "
+                          "crypto data you want to check:")
+
+            actual_dates = list(crypto_dict[crypto])
+            first_date = sorted(list(crypto_dict[crypto]))[0]
+            print('first_value = ', sorted(list(crypto_dict[crypto]))[0])
+
+        # Generating dates we should have data according to our first record
         datapoints = sorted(set(interval_to_scrape(day1=first_date, max_date='')))
+        # Comparing actual dates vs theoretical
         missing_dates = set(datapoints) - set(actual_dates)
         print(f'You have {len(missing_dates)} warnings.')
         return sorted(list(missing_dates))
