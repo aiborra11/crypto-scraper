@@ -169,11 +169,8 @@ if __name__ == "__main__":
 
         processed = processed
         db = Database()
-
-        # if processed='raw', put processed='' in select_collection() and ask for crypto, else processed=processed
         if processed == 'raw':
             selected_collection = db.select_collection(processed='')
-
         else:
             selected_collection, crypto, new_raw = db.select_collection(processed=processed)
 

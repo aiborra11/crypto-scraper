@@ -312,7 +312,7 @@ class Database(object):
         #     # Grouping collections and generating df by groups to improve performance.
         #     if (num % 100 == 0) & (num > 0):
         #         get_data(raw_df, frequency)
-        #         df_raw = pd.DataFrame()
+        #         raw_df = pd.DataFrame()
         #
         #     elif date == dates_interval[0][-1]:
         #         print('collecting data...')
@@ -326,6 +326,33 @@ class Database(object):
         if self.new_raw:
             db = self.database_name
             self.populate_collection(dates_interval, crypto, db)
+
+            raw_df = pd.DataFrame()
+            for date in dates_interval:
+                raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
+
+            return raw_df, self.collection_name
+
+            # raw_df = pd.DataFrame()
+            # for num, date in tqdm(enumerate(dates_interval)):
+            #     if num==0:
+            #         raw_df = pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))
+            #         print('--aa1', raw_df)
+            #
+            #     # Grouping collections and generating df by groups to improve RAM performance.
+            #     if (num % 3 == 0) & (num > 0):
+            #         raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
+            #         print('--aa2', raw_df)
+            #         raw_df = pd.DataFrame()
+            #
+            #     elif date == dates_interval[0][-1]:
+            #         raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
+            #         print('--aa3',raw_df)
+            #     else:
+            #         pass
+            # print('--aa',raw_df)
+
+
 
         else:
             raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
@@ -398,11 +425,11 @@ class Database(object):
         db_collection = db
         for date in tqdm(interval_to_update):
             data, warning, crypto = data_scraper(date, crypto)
-            if warning: warnings.append(warning)
+            if warning: warnings.append(warning), print(f'You have {len(warnings)} missing dates in {crypto}_RAW. '
+                                                        f'You should double-check them!\n', warnings)
             self.push_data_into_db(data, db_collection, date, crypto, processed=False)
 
-        return print(f'You have {len(warnings)} missing dates in {crypto}_RAW. You should double-check them!\n',
-                     warnings)
+        return db_collection
 
     @staticmethod
     def push_data_into_db(available_data, db_collection, date, crypto, processed=False):
@@ -514,8 +541,9 @@ class Database(object):
 
         print('Checking if you have missing data...')
 
-        # Finding out first available record in our collection...
+        # If processed we will need to query the collection.
         if self.processed:
+            # Finding out first available record in our collection...
             actual_dates = selected_collection.find().sort('timestamp', pymongo.ASCENDING)
             first_record = actual_dates[0]
             print(first_record)
@@ -523,6 +551,7 @@ class Database(object):
             first_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in first_record][0]
             print(f'Your first record for {self.collection_name} is from:', first_date)
 
+        # If RAW data we only need to check the names of the collections.
         else:
             # Bringing crypto dictionary containing key=crypto, value=list of available dates
             crypto_dict = self.show_stored_dates(processed='raw')
@@ -536,7 +565,6 @@ class Database(object):
 
                 if crypto in available_data:
                     break
-
                 else:
                     print("Sorry, I didn't understand that. Please, copy and paste from the above list the name of the "
                           "crypto data you want to check:")
@@ -551,7 +579,6 @@ class Database(object):
         missing_dates = set(datapoints) - set(actual_dates)
         print(f'You have {len(missing_dates)} warnings.')
         return sorted(list(missing_dates))
-
 
     def show_stored_dates(self, processed):
         """
