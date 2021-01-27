@@ -81,15 +81,19 @@ if __name__ == "__main__":
                     print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
 
             if len(dates_interval) <= 90:
-                raw_data = db.collect_raw_data(selected_collection, crypto, dates_interval)
-                csv_converter(raw_data, raw_data, frequency='', csv_file=csv_file, processed=False)
+                raw_data, collection = db.collect_raw_data(selected_collection, crypto, dates_interval)
+                last_date = dates_interval[-1]
+                csv_converter(raw_data, collection,last_date, frequency='', csv_file=csv_file, processed=False)
 
             else:
                 dates_interval = [dates_interval[i:i + 90] for i in range(0, len(dates_interval), 90)]
                 raw_data = pd.DataFrame()
                 for intervals in dates_interval:
-                    raw_data = db.collect_raw_data(selected_collection, crypto, intervals)[0]
-
+                    raw_data, collection = db.collect_raw_data(selected_collection, crypto, intervals)
+                    last_date = intervals[-1]
+                    csv_converter(raw_data, collection, last_date, frequency='', csv_file=csv_file,
+                                  processed=False)
+                    raw_data = pd.DataFrame()
 
         # if csv_file == 'yes' and processed == 'processed':
         #     print(processed_data)
