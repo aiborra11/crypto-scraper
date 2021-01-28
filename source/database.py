@@ -106,10 +106,12 @@ class Database(object):
 
         # PROCESSED collections
         elif self.processed:
-            available_data = [x for x in available_data if x.split('_')[-1].lower() == 'processed']
+            # available_data = [x for x in available_data if x.split('_')[-1].lower() == 'processed']
+            available_data = dict(self.show_stored_dates(processed='processed').items())
             if available_data:
-                print(f'These are your current stored PROCESSED collections inside your "{self.db_name}" database:',
-                      sorted(available_data))
+                print(sorted(available_data))
+                # print(f'These are your current stored PROCESSED collections inside your "{self.db_name}" database:',
+                #       sorted(available_data))
                 print("Select the one you are willing to connect or write a new one if you want to create it\n",
                       sorted(cryptos['symbol'].unique()))
             else:
@@ -118,12 +120,15 @@ class Database(object):
 
         # RAW collections
         else:
-            available_data = [x for x in available_data if x.split('_')[-1].lower() == 'raw']
+            # available_data = [x for x in available_data if x.split('_')[-1].lower() == 'raw']
+            available_data = dict(self.show_stored_dates(processed='raw').items())
             if available_data:
-                print(f'These are your current stored RAW collections inside your "{self.db_name}" database:',
-                      sorted(available_data))
+                # print(f'These are your current stored RAW collections inside your "{self.db_name}" database:\n',
+                #       sorted(available_data))
+                # sorted(available_data)
                 print("\nSelect the one you are willing to connect or write a new one if you want to create it",
                       sorted(cryptos['symbol'].unique()))
+
             else:
                 print('You do not have any RAW data collection yet. \n\nChoose from the list below and create'
                       'a new one:\n', sorted(cryptos['symbol'].unique()))
@@ -147,13 +152,15 @@ class Database(object):
 
         self.new_raw = False
         # If we had the collection already (either processed or raw) in our db
+        self.collection_name = f'{self.collection_name}_RAW' if len(self.collection_name.split('_')) == 1 else self.collection_name
         if self.collection_name in available_data:
             if self.processed:
                 self.frequency = self.collection_name.split('_')[0]
             else:
-                pass
-            print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
-                  f"data.")
+                crypto_dict = available_data[f'{self.collection_name}']
+                print(f'Available dates for {self.collection_name}:', crypto_dict)
+                self.new_raw = True
+
             return self.database_name[self.collection_name], self.collection_name, self.new_raw
 
         # To generate a new collection storing PROCESSED data for a new crypto
@@ -177,10 +184,17 @@ class Database(object):
 
         # To generate a new collection storing RAW data for a new crypto
         elif self.collection_name not in available_data:
-            print(f"You do not have previous data for {self.collection_name}, so we are going to generate a new "
-                  f"collection per day storing raw data in the following format:\n"
-                  f"'YYYYMMDD_{self.collection_name}_RAW'")
-            self.new_raw = True
+            selected_collection = self.collection_name.replace('_RAW', '').replace('_PROCESSED', '')
+            if len(selected_collection.split('_')) > 1:
+                print(f"You do not have previous data for {self.collection_name}, so we are going to generate a new "
+                      f"collection per day storing raw data in the following format:\n"
+                      f"'YYYYMMDD_{self.collection_name}_RAW'")
+                self.new_raw = True
+            else:
+                # crypto_dict = available_data[f'{self.collection_name}_RAW']
+                # print(f'Available dates for {self.collection_name}_RAW:',  crypto_dict)
+                self.new_raw = True
+
             return self.database_name, self.collection_name, self.new_raw
 
     def dates_to_collect(self, selected_collection):
@@ -200,10 +214,10 @@ class Database(object):
             List containing the interval of dates and name of the crypto we are willing to collect
         """
 
-        print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
-        print("If you'd like to update your DB, write: 'UPDATE'.")
-        print("To store data for a specific interval write: 'INTERVAL'.")
-        print("To store ONLY a CONCRETE period, write: CONCRETE.")
+        print("\nIf you'd like to collect all the available data in the AWS server, write: 'ORIGIN'.")
+        print("If you'd like to update your DB since your last recorded date, write: 'UPDATE'.")
+        print("To get data for a specific interval, write: 'INTERVAL'.")
+        print("To get a concrete date, write: CONCRETE.")
 
         available_options = ['origin', 'update', 'interval', 'concrete']
 
@@ -230,10 +244,25 @@ class Database(object):
         elif interval == 'update':
             print(f'You have chosen UPDATE, so we are going to collect data since your last day recorded.')
 
-            # Finding out last recorded value inside our collection
-            last_record = selected_collection.find().sort('timestamp', pymongo.DESCENDING).limit(1)
-            last_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in last_record][0]
-            print(f'Your last recorded value was on: {last_date}.')
+            if self.processed:
+                # Finding out last recorded value inside our PROCESSED data collection
+                last_record = selected_collection.find().sort('timestamp', pymongo.DESCENDING).limit(1)
+                if last_record:
+                    last_date = [str(d['timestamp']).split('D')[0].replace('-', '') for d in last_record][0]
+                    print(f'Your last recorded value was on: {last_date}.')
+                else:
+                    print(f'You do not have stored PROCESSED data for {self.collection_name}')
+
+            else:
+                # Finding out last recorded value inside our RAW data collection
+                crypto_dict = dict(self.show_stored_dates(processed='raw').items())
+                if crypto_dict[f'{self.collection_name}_RAW']:
+                    last_date = crypto_dict[f'{self.collection_name}_RAW'][-1]
+                    print(f'Your last recorded value was on: {last_date}.')
+                else:
+                    print(f'You do not have stored RAW data for {self.collection_name}')
+
+            # TODO In case we deleted data from our db and we want to update from our csv files. Compare db vs csv and take the smallest date?
 
             # Generating a list containing the dates we are going to scrape
             interval_to_update = sorted(interval_to_scrape(day1=last_date, max_date=''))
@@ -285,7 +314,6 @@ class Database(object):
             f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/{interval_to_update[-1]}.csv.gz')
         # Cleaning the name of the cryptocurrency to use it as a filter
         crypto = [crypt for crypt in cryptos if crypt in dataset['symbol'].unique()][0]
-
         return interval_to_update, crypto
 
     def collect_raw_data(self, selected_collection, crypto, dates_interval=''):
@@ -305,23 +333,7 @@ class Database(object):
             {[self.collection_name]}
                 Name of the crypto
         """
-        # Connecting to the raw data collection
-        # raw_df = pd.DataFrame()
-        # for num, date in enumerate(dates_interval):
-        #     raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
-        #     # Grouping collections and generating df by groups to improve performance.
-        #     if (num % 100 == 0) & (num > 0):
-        #         get_data(raw_df, frequency)
-        #         raw_df = pd.DataFrame()
-        #
-        #     elif date == dates_interval[0][-1]:
-        #         print('collecting data...')
-        #         get_data(raw_df, frequency)
-        #
-        #     else:
-        #         pass
 
-        # selected_collection_raw = self.database_name[f'{date}_{crypto}_RAW']
         # To generate new collections storing RAW data
         if self.new_raw:
             db = self.database_name
@@ -332,27 +344,6 @@ class Database(object):
                 raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
 
             return raw_df, self.collection_name
-
-            # raw_df = pd.DataFrame()
-            # for num, date in tqdm(enumerate(dates_interval)):
-            #     if num==0:
-            #         raw_df = pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))
-            #         print('--aa1', raw_df)
-            #
-            #     # Grouping collections and generating df by groups to improve RAM performance.
-            #     if (num % 3 == 0) & (num > 0):
-            #         raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
-            #         print('--aa2', raw_df)
-            #         raw_df = pd.DataFrame()
-            #
-            #     elif date == dates_interval[0][-1]:
-            #         raw_df = pd.concat([raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
-            #         print('--aa3',raw_df)
-            #     else:
-            #         pass
-            # print('--aa',raw_df)
-
-
 
         else:
             raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
@@ -388,7 +379,9 @@ class Database(object):
                 # Populating db before retrieving raw data
                 if self.collection_name.lower() == 'yes':
                     self.collection_name = str(coll_prov[-2])
+
                     interval_to_update, crypto = self.dates_to_collect(selected_collection)
+
                     self.populate_collection(interval_to_update, crypto)
                     # TODO BLOWS HERE BECAUSE .find() REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
 
@@ -470,7 +463,7 @@ class Database(object):
                 pass
                 # print(f'There is no available data for the date: ', date)
 
-    def remove_collection(self, collection=''):
+    def remove_collection(self, processed, collection=''):
         """
         Shows the available collections and asks to delete any collections we are no longer interested in storing
         into our database.
@@ -491,22 +484,32 @@ class Database(object):
         else:
             print(f'Available collections for this database: {self.show_available_collections()}')
             print('Please, select the one you are willing to drop: or write "all" if you want to drop them all')
-            collections = str(input())
+            collections = str(input()).strip().split(',')
 
-            if collections == 'all':
+            if collections[0] == 'all':
                 print('We are preparing all available collections: ', collections)
-                for collection in tqdm(self.show_available_collections()):
-                    self.database_name[collection].drop()
+                available_collections = sorted(self.show_available_collections())
+                cryptos = list(set([cryp.split('_')[1] for cryp in available_collections]))
+                crypto_dict = dict(self.show_stored_dates(processed='raw').items())
+
+                for crypt in cryptos:
+                    available_dates = crypto_dict[f'{crypt}_{processed}']
+                    print(f'Deleting data for {crypt}')
+                    for date in tqdm(sorted(available_dates[:-1])):
+                        # Avoid deleting the last collection so we can use 'UPDATE' functionality
+                        self.database_name[f'{date}_{crypt}_{processed}'].drop()
 
             elif len(collections) > 1:
-                collections_date = collections.replace(',', '').replace("'", '').split(' ')
-                print("We are deleting the collections you've selected: ", collections_date)
-                for collection in tqdm(sorted(collections_date)):
+                print("We are deleting the collections you've selected: ", collections)
+                for collection in tqdm(collections):
+                    # TODO need to improve this by using nltk/spacy
+                    collection = collection.replace(' ', '').replace("'", '').replace('[', '').replace(']', '')
                     self.database_name[collection].drop()
-
             else:
                 print("We are deleting the collection you've selected: ", collections)
-                self.database_name[collections].drop()
+                collection = collections[0].replace(',', '').replace("'", '').replace('[', '').replace(']', '')
+                print(collection)
+                self.database_name[collection].drop()
 
     def show_available_collections(self):
         """

@@ -65,7 +65,7 @@ if __name__ == "__main__":
             selected_collection, crypto, new_raw = db.select_collection(processed=False)
             dates_interval, crypto = db.dates_to_collect(selected_collection)
 
-            print('Do you want to store your data as a CSV file (YES/NO)?')
+            print('Do you want to store your RAW data as a CSV file (YES/NO)?')
             while True:
                 try:
                     csv_file = str(input()).lower()
@@ -73,46 +73,21 @@ if __name__ == "__main__":
                     print("Sorry, I didn't understand that. Please, try again")
 
                 if csv_file == 'yes':
-                    csv_file = 'yes'
+                    # csv_file = 'yes'
                     break
                 elif csv_file == 'no':
                     break
                 else:
-                    print("Sorry, I didn't understand that. Please, write PROCESSED OR RAW")
+                    print("Sorry, I didn't understand that. Please, write 'YES' or 'NO'.")
 
-            if len(dates_interval) <= 90:
-                raw_data, collection = db.collect_raw_data(selected_collection, crypto, dates_interval)
-                last_date = dates_interval[-1]
-                csv_converter(raw_data, collection,last_date, frequency='', csv_file=csv_file, processed=False)
-
-            else:
-                dates_interval = [dates_interval[i:i + 90] for i in range(0, len(dates_interval), 90)]
+            dates_interval = [dates_interval[i:i + 3] for i in range(0, len(dates_interval), 3)]
+            raw_data = pd.DataFrame()
+            for intervals in dates_interval:
+                raw_data, collection = db.collect_raw_data(selected_collection, crypto, intervals)
+                last_date = intervals[-1]
+                csv_converter(raw_data, collection, last_date, frequency='', csv_file=csv_file,
+                              processed=False)
                 raw_data = pd.DataFrame()
-                for intervals in dates_interval:
-                    raw_data, collection = db.collect_raw_data(selected_collection, crypto, intervals)
-                    last_date = intervals[-1]
-                    csv_converter(raw_data, collection, last_date, frequency='', csv_file=csv_file,
-                                  processed=False)
-                    raw_data = pd.DataFrame()
-
-        # if csv_file == 'yes' and processed == 'processed':
-        #     print(processed_data)
-        #     processed_data.to_csv(f'data.nosync/{frequency}_{collection_name}_PROCESSED.gz', compression='gzip')
-        #     print(
-        #         f'Your csv file containing data for {frequency}_{collection_name}_PROCESSED has been created '
-        #         f'successfully. Check your data folder!')
-        # elif csv_file == 'yes':
-        #     print(raw_data)
-        #     raw_data[0].to_csv(f'data.nosync/{raw_data[1]}_RAW.gz', compression='gzip')
-        #     print(f'Your csv file containing data for {raw_data[1]}_RAW has been created successfully. '
-        #           f'Check your data folder!')
-        # else:
-        #     print('Ok! I will just show the data:')
-        #     try:
-        #         print('--->processed_data<---\n', processed_data)
-        #     except NameError:
-        #         print('--->raw_data<---\n', raw_data[0])
-
 
 
 
@@ -140,8 +115,22 @@ if __name__ == "__main__":
         #         pass
 
     elif userChoice == 2:
+        print('What do you want to DELETE? PROCESSED or RAW data?')
+        while True:
+            try:
+                processed = str(input()).upper()
+            except ValueError:
+                print("Sorry, I didn't understand that. Please, try again")
+
+            if processed == 'PROCESSED':
+                break
+            elif processed == 'RAW':
+                break
+            else:
+                print("Sorry, I didn't understand that. Please, write PROCESSED or RAW")
+
         db = Database()
-        deletedColl = db.remove_collection()
+        deletedColl = db.remove_collection(processed)
         print(f'The collection has been removed successfully from the database.')
 
     elif userChoice == 3:
