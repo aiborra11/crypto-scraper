@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 from os import listdir
 from .database import Database
+from .utils import csv_converter
 
 
 class ProcessData(Database):
@@ -20,13 +21,48 @@ class ProcessData(Database):
         """
         # Bringing raw data from the mongoDB
         super().__init__(processed)
-        selected_collection, self.collection_name = self.select_collection(processed)
-        self.df = self.collect_raw_data()[0]
+        selected_collection, self.collection_name, self.new_raw = self.select_collection(processed)
+        # available_data = dict(self.show_stored_dates(processed='raw').items())
 
-        # Essential data preprocessing (cleaning and summarizing features into less columns)
-        self.noDuplicates = self.duplicates_remover()
-        self.dataClean = self.data_cleaner(['', 'symbol', 'trdMatchID'])
-        self.battle = self.bulls_vs_bears(['size', 'grossValue'])
+        dates_interval = self.dates_to_collect(selected_collection)
+
+        # TODO HERE IS WHERE WE SHOULD BE DEALING WITH THE RAM ISSUE
+        dates_interval = [dates_interval[i:i + 3] for i in range(0, len(dates_interval), 3)]
+        print('Do you want to store your PROCESSED data as a CSV file (YES/NO)?')
+        while True:
+            try:
+                csv_file = str(input()).lower()
+            except ValueError:
+                print("Sorry, I didn't understand that. Please, try again")
+
+            if csv_file == 'yes':
+                # csv_file = 'yes'
+                break
+            elif csv_file == 'no':
+                break
+            else:
+                print("Sorry, I didn't understand that. Please, write 'YES' or 'NO'.")
+
+        processed_data = pd.DataFrame()
+        dates_interval = [dates_interval[i:i + 3] for i in range(0, len(dates_interval), 3)]
+        for intervals in dates_interval:
+            self.df = self.collect_raw_data(selected_collection, self.collection_name, intervals[0])[0]
+
+            # Essential data preprocessing (cleaning and summarizing features into less columns)
+            self.noDuplicates = self.duplicates_remover()
+            self.dataClean = self.data_cleaner(['', 'symbol', 'trdMatchID'])
+            processed_totals = self.sum_grouper(cols=['size', 'grossValue', 'btcTotal',
+                                                              'usdTotal', 'ContractsTraded_size',
+                                                              'ContractsTraded_grossValue']).fillna(0)
+            self.battle = self.bulls_vs_bears(['size', 'grossValue'])
+            processed_transactions = self.counter_grouper(cols=['side']).fillna(0)
+            processed_ohcl, collection_name, frequency = self.ohcl()
+
+            csv_converter(processed_ohcl, collection_name, last_date='', frequency=self.frequency, csv_file=csv_file,
+                          processed=True)
+
+            # processed_data = pd.concat([processed_data, processed_ohcl], axis=1).reset_index()
+
 
 
     def duplicates_remover(self):

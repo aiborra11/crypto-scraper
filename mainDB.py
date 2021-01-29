@@ -51,12 +51,14 @@ if __name__ == "__main__":
 
         if processed == 'processed':
             initial_data = ProcessData(processed=True)
-            processed_totals = initial_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal',
-                                                              'usdTotal', 'ContractsTraded_size',
-                                                              'ContractsTraded_grossValue']).fillna(0)
-            processed_transactions = initial_data.counter_grouper(cols=['side']).fillna(0)
-            processed_ohcl, collection_name, frequency = initial_data.ohcl()
-            processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
+            # processed_totals = initial_data.sum_grouper(cols=['size', 'grossValue', 'btcTotal',
+            #                                                   'usdTotal', 'ContractsTraded_size',
+            #                                                   'ContractsTraded_grossValue']).fillna(0)
+            # processed_transactions = initial_data.counter_grouper(cols=['side']).fillna(0)
+            # processed_ohcl, collection_name, frequency = initial_data.ohcl()
+            # processed_data = pd.concat([processed_totals, processed_ohcl], axis=1).reset_index()
+
+
 
         #     TODO Hacer push de processed data??
 

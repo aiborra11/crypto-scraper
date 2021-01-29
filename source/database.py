@@ -41,7 +41,6 @@ class Database(object):
         # Filtering dbs we do not need
         available_dbs = [x for x in self._client.list_database_names() if x not in ['admin', 'config', 'local']]
         print('Write the db you are interested in: ', available_dbs)
-        print('You can also write e new one in case you want to create it...')
 
         db_prov = []
         while True:
@@ -100,7 +99,8 @@ class Database(object):
         cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                               f'{interval}.csv.gz')
 
-        # Filtering available PROCESSED/RAW collections
+        # print("Select the one you are willing to connect or write a new one if you want to create it:\n",
+        #       sorted(cryptos['symbol'].unique()))        # Filtering available PROCESSED/RAW collections
         if self.processed == '':
             return print(f'These are your current stored collections inside your "{self.db_name}" database:\n', available_data)
 
@@ -108,15 +108,20 @@ class Database(object):
         elif self.processed:
             # available_data = [x for x in available_data if x.split('_')[-1].lower() == 'processed']
             available_data = dict(self.show_stored_dates(processed='processed').items())
+
             if available_data:
-                print(sorted(available_data))
-                # print(f'These are your current stored PROCESSED collections inside your "{self.db_name}" database:',
-                #       sorted(available_data))
-                print("Select the one you are willing to connect or write a new one if you want to create it\n",
-                      sorted(cryptos['symbol'].unique()))
+                if list(available_data.values())[0]==None:
+                    self.collection_name = list(available_data.keys())[0].split('_')[1]
+                    self.frequency = list(available_data.keys())[0].split('_')[0]
+
+                else:
+                    print(sorted(available_data))
+                    # print(f'These are your current stored PROCESSED collections inside your "{self.db_name}" database:',
+                    #       sorted(available_data))
+                    print("Select the one you are willing to connect or write a new one if you want to create it:\n",
+                          sorted(cryptos['symbol'].unique()))
             else:
-                print('You do not have any PROCESSED data collection yet. \n\nChoose from the list below and create'
-                      'a new one:\n', sorted(cryptos['symbol'].unique()))
+                print('Choose from the list below and create a new one:\n', sorted(cryptos['symbol'].unique()))
 
         # RAW collections
         else:
@@ -135,24 +140,34 @@ class Database(object):
 
         while True:
             try:
-                self.collection_name = str(input()).upper()
-            except ValueError:
-                print("Sorry, I didn't understand that.")
-                continue
+                if self.collection_name in available_data:
+                    break
+                elif self.collection_name in cryptos['symbol'].unique():
+                    break
+            except:
+                try:
+                    self.collection_name = str(input()).upper()
+                except ValueError:
+                    print("Sorry, I didn't understand that.")
+                    continue
 
-            if self.collection_name in available_data:
-                break
-            elif self.collection_name in cryptos['symbol'].unique():
-                break
-            elif self.collection_name not in cryptos['symbol'].unique():
-                print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
-                continue
-            else:
-                print('Something went wrong! Please, try again.')
+                if self.collection_name in available_data:
+                    break
+                elif self.collection_name in cryptos['symbol'].unique():
+                    break
+                elif self.collection_name not in cryptos['symbol'].unique():
+                    print(f"Sorry, this crypto '{self.collection_name}' does not exist. Try again!")
+                    continue
+                else:
+                    print('Something went wrong! Please, try again.')
 
         self.new_raw = False
         # If we had the collection already (either processed or raw) in our db
-        self.collection_name = f'{self.collection_name}_RAW' if len(self.collection_name.split('_')) == 1 else self.collection_name
+        if self.processed:
+            self.collection_name = f'{self.collection_name}_PROCESSED' if len(self.collection_name.split('_')) == 1 \
+                else self.collection_name
+        else:
+            self.collection_name = f'{self.collection_name}_RAW' if len(self.collection_name.split('_')) == 1 else self.collection_name
         if self.collection_name in available_data:
             if self.processed:
                 self.frequency = self.collection_name.split('_')[0]
@@ -166,20 +181,25 @@ class Database(object):
         # To generate a new collection storing PROCESSED data for a new crypto
         elif self.collection_name not in available_data and self.processed:
             # We need a timeframe to get processed data
-            print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
-            while True:
-                try:
-                    self.frequency = str(input()).replace(' ', '').upper()
-                except ValueError:
-                    print("Sorry, I didn't understand that.")
-                    continue
-                else:
-                    break
-
-            self.database_name.create_collection(f'{self.frequency}_{self.collection_name}_PROCESSED')
+            if self.frequency:
+                pass
+            else:
+                print("Which is the timeframe you'd like to receive the data [XMin, XH, D, W, M...]")
+                while True:
+                    try:
+                        self.frequency = str(input()).replace(' ', '').upper()
+                    except ValueError:
+                        print("Sorry, I didn't understand that.")
+                        continue
+                    else:
+                        break
+            try:
+                self.database_name.create_collection(f'{self.frequency}_{self.collection_name}')
+            except:
+                pass
             print(f"You've been connected into your {self.db_name} database and logged into {self.collection_name} "
                   f"data")
-            self.collection_name = f'{self.frequency}_{self.collection_name}_PROCESSED'
+            self.collection_name = f'{self.frequency}_{self.collection_name}'
             return self.database_name[self.collection_name], self.collection_name, self.new_raw
 
         # To generate a new collection storing RAW data for a new crypto
@@ -256,8 +276,8 @@ class Database(object):
             else:
                 # Finding out last recorded value inside our RAW data collection
                 crypto_dict = dict(self.show_stored_dates(processed='raw').items())
-                if crypto_dict[f'{self.collection_name}_RAW']:
-                    last_date = crypto_dict[f'{self.collection_name}_RAW'][-1]
+                if crypto_dict[f'{self.collection_name}']:
+                    last_date = crypto_dict[f'{self.collection_name}'][-1]
                     print(f'Your last recorded value was on: {last_date}.')
                 else:
                     print(f'You do not have stored RAW data for {self.collection_name}')
@@ -336,6 +356,7 @@ class Database(object):
 
         # To generate new collections storing RAW data
         if self.new_raw:
+            print('Creating new collections to store the raw data...')
             db = self.database_name
             self.populate_collection(dates_interval, crypto, db)
 
@@ -346,13 +367,46 @@ class Database(object):
             return raw_df, self.collection_name
 
         else:
+            if self.processed:
+                crypto_dict = dict(self.show_stored_dates(processed='raw').items())
+                db = self.database_name
+                crypto = crypto.split('_')[1]
+                if crypto_dict[f'{crypto}_RAW']:
+                    available_dates = crypto_dict[f'{crypto}_RAW']
+
+                    # Finding out dates we already have and just need to query vs the ones we need to scrape from AWS.
+                    available_dates = [date for date in available_dates if date in dates_interval[0]]
+                    print(f'\nWe found existing raw data for {crypto}: ', available_dates)
+                    missing_dates = [date for date in dates_interval[0] if date not in available_dates]
+                    print(f'We will need to collect from AWS the following dates: ', missing_dates)
+
+                    # Pushing new scraped data into our RAW db
+                    self.populate_collection(missing_dates, crypto, db)
+
+                    # Collecting all data
+                    all_dates = available_dates + missing_dates
+                    raw_df = pd.DataFrame()
+                    for date in all_dates:
+                        raw_df = pd.concat(
+                            [raw_df, pd.DataFrame(self.database_name[f'{date}_{crypto}_RAW'].find({}, {'_id': 0}))])
+                    return raw_df, self.collection_name
+
+                else:
+                    print(f'You do not have stored RAW data for {self.collection_name}')
+
+            else:
+                pass
+            print(selected_collection)
             raw_df = pd.DataFrame(list(selected_collection.find({}, {'_id': 0})))
             # In case we do not have any previous raw data for this crypto
+            print('Checking if we have stored RAW data for your selected dates...')
+
             if raw_df.empty:
+                print('')
                 interval = (str(datetime.today() - timedelta(days=1))).split(' ')[0].replace('-', '')
                 cryptos = pd.read_csv(f'https://s3-eu-west-1.amazonaws.com/public-testnet.bitmex.com/data/trade/'
                                       f'{interval}.csv.gz')
-                print('We could not retrieve any data since you do not have any for this cryptocurrency. '
+                print('We could not find any RAW data for the specified dates...'
                       f'\nWrite "yes" to store data for {self.collection_name} in your db'
                       f'\nOtherwise, write the correct name')
 
@@ -381,7 +435,6 @@ class Database(object):
                     self.collection_name = str(coll_prov[-2])
 
                     interval_to_update, crypto = self.dates_to_collect(selected_collection)
-
                     self.populate_collection(interval_to_update, crypto)
                     # TODO BLOWS HERE BECAUSE .find() REQUIRES TOO MUCH RAM TO BRING THE WHOLE DATA
 
@@ -598,6 +651,7 @@ class Database(object):
 
         crypto_dict = {}
         available_data = self.show_available_collections()
+
         if processed == 'raw':
             available_data = [x for x in available_data if x.split('_')[-1].lower() == processed]
             crypt_data = [(x.split('_')[1] + '_' + x.split('_')[2], x.split('_')[0]) for x in available_data]
@@ -617,6 +671,7 @@ class Database(object):
             available_data = [x for x in available_data if x.split('_')[-1].lower() == processed]
             if available_data:
                 print('\nSelect the PROCESSED collection you want to check from the following list:', available_data)
+
                 while True:
                     try:
                         collection_name = str(input()).upper()
@@ -636,6 +691,7 @@ class Database(object):
                     crypto_dict[selected_collection]=available_dates
                 else:
                     print(f'Sorry, your collection {collection_name} seems to be empty.')
+                    return {f"{collection_name.split('_')[0]}_{collection_name.split('_')[1]}": None}
             else:
                 print(f'You do not have any {processed.upper()} data collection yet.')
         else:
@@ -643,119 +699,3 @@ class Database(object):
 
         return crypto_dict
 
-
-    # def store_processed_data(self, processed_data):
-    #     """
-    #     Reconnects to the mongoDB to check if we have a DB to store processed data, in case we don't, it will be created,
-    #     and push new processed data into our processed db.
-    #
-    #     Arguments:
-    #     ----------
-    #     frequency {[str]} -- Timeframe we are using to process the data.
-    #     processed_data {[Dataframe]} -- Processed data.
-    #
-    #     Returns:
-    #     --------
-    #         ()
-    #     """
-    #
-    #     # Reconnecting to the database to store processed data
-    #     self._client = MongoClient('localhost', 27017)
-    #     self.db_name = 'processed_cryptos'
-    #     existing_processed_db = self._client.list_database_names()
-    #
-    #     # Checking if we already have a db to store processed data
-    #     if self.db_name in existing_processed_db:
-    #         self.database_name = self._client[self.db_name]
-    #         existing_processed_data = self.show_available_collections()
-    #
-    #         if f'{self.frequency}_{self.collection_name.upper()}_PROCESSED' in existing_processed_data:
-    #             # Update collection
-    #             new_collection = self.database_name[f'{self.frequency}_{self.collection_name.upper()}_PROCESSED']
-    #
-    #             print(f'You have existing processed data for {self.collection_name.upper()} and {self.frequency} timeframe. '
-    #                   f'We are going to update it.')
-    #             self.push_data_into_db(processed_data, new_collection, processed=True)
-    #             pass
-    #         else:
-    #             # Create a new collection
-    #             self.database_name.create_collection(f'{self.frequency}_{self.collection_name.upper()}_PROCESSED')
-    #             pass
-    #
-    #     # Creating a new db to store processed data.
-    #     else:
-    #         self.database_name = self._client[self.db_name]
-    #         new_collection = self.database_name.create_collection(f'{self.frequency}_{self.collection_name.upper()}_PROCESSED')
-    #         self.push_data_into_db(processed_data, new_collection, processed=True)
-
-
-
-
-
-#
-# class DatabaseUpdator(Database):
-#     """
-#     Class inherits Database class to properly work when updating a new collection of data.
-#
-#     """
-#
-#     # def __init__(self):
-#     #     pass
-#
-#     def update_db(self):
-#         """
-#         Shows a list of available collections we can find inside the selected database and asks if we are interested
-#         in updating our database with new data.
-#
-#         Arguments:
-#         ----------
-#         ()
-#         Returns:
-#         --------
-#             Collections we are willing to include into our database.
-#
-#         """
-#
-#         Database.COLLECTION = self._client[self.databaseName]
-#         available_data = sorted(Database.COLLECTION.list_collection_names())
-#         print('Available data: ', available_data)
-#
-#         print(f'\nThere are {len(available_data)} available collections in your database.')
-#
-#         print("\nIf you'd like to collect all the available data, write: 'ORIGIN'.")
-#         print("If you'd like to update your general csv file, write: 'UPDATE'.")
-#         print("If you'd like to update since the last available record in the database, write 'LAST'.")
-#         print("To update from a specific period, write the date in this format: 'YYYYMMDD'.")
-#         print("To update ONLY a CONCRETE period, write: CONCRETE.")
-#
-#         interval = str(input()).lower()
-#         if interval == 'last':
-#             last_val = available_data[-1]
-#             print('You have chosen LAST, so we will update your general csv file since:', last_val)
-#             to_update = [x for x in available_data if x >= last_val]
-#             return sorted(to_update), ''
-#
-#         elif interval == 'origin':
-#             print(f'You have chosen ORIGIN, so we are going to collect data since the very beginning.')
-#             to_update = [x for x in available_data if x >= '20141121']
-#             return sorted(to_update), ''
-#
-#         elif interval == 'concrete':
-#             print('Write the period you want to collect in the following format: "YYYYMMDD" ')
-#             interval = str(input())
-#             if interval in available_data:
-#                 print(f'The interval: {interval} is available')
-#                 return [interval], ''
-#             else:
-#                 print('Sorry but we do not have this collection in our database.')
-#
-#         elif interval in available_data:
-#             print(f'The interval: {interval} is available')
-#             to_update = [x for x in available_data if x >= interval]
-#             return sorted(to_update), ''
-#
-#         elif interval == 'update':
-#             return available_data[-1], ''
-#
-#         else:
-#             print('There is no data for this database')
